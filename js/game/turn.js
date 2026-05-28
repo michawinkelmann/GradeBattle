@@ -24,6 +24,10 @@ export function startTurn(state) {
 
 // Called every fixed step.
 export function updateTurn(state, dt) {
+  if (state.winner != null || state.endedReason) return;
+  // Continuous win check (catches out-of-world & external state mods).
+  checkWinCondition(state);
+  if (state.winner != null) return;
   if (state.turnState === 'aim') {
     state.turnTimer -= dt;
     if (state.turnTimer <= 0) {

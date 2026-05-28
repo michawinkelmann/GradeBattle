@@ -828,19 +828,39 @@ export function getBackdrop(theme) {
     const w = 120, h = 30;
     const rows = [];
     if (theme.backdrop === 'building') {
-      // Schulgebäude-Silhouette mit ein paar Fenstern.
+      // Variierte Häuser-Silhouette mit Schulgebäude.
+      // Roof-Höhen pro x-Spalte (procedural):
+      const roof = new Int8Array(w);
+      let cursor = 0;
+      const shapes = [
+        { width: 0, top: h }, // gap
+        { width: 8, top: 18 },
+        { width: 4, top: h },
+        { width: 12, top: 10 }, // school
+        { width: 22, top: 6 },
+        { width: 12, top: 10 },
+        { width: 4, top: h },
+        { width: 9, top: 14 },
+        { width: 6, top: 20 },
+        { width: 3, top: h },
+        { width: 11, top: 12 },
+        { width: 6, top: 18 },
+        { width: 5, top: h }
+      ];
+      for (const s of shapes) {
+        for (let i = 0; i < s.width && cursor < w; i++) roof[cursor++] = s.top;
+      }
+      while (cursor < w) roof[cursor++] = h;
       for (let y = 0; y < h; y++) {
         let r = '';
         for (let x = 0; x < w; x++) {
-          // Drei Häuser hintereinander: 20-50 niedrig, 55-85 hoch, 90-115 niedrig.
-          const inA = x >= 20 && x < 50 && y >= 14;
-          const inB = x >= 55 && x < 85 && y >= 8;
-          const inC = x >= 90 && x < 115 && y >= 16;
-          if (inA || inB || inC) {
-            // Fenster
-            if ((x % 5 === 2) && ((y % 6 === 0) || (y % 6 === 3))) r += 'Y';
-            else r += 'r';
-          } else r += '_';
+          const top = roof[x];
+          if (y < top) { r += '_'; continue; }
+          // Wall vs window: small window pattern.
+          const inWin = (y - top) >= 3 && (y - top) % 5 === 1 && (x % 4 === 1);
+          if (inWin) r += 'Y';
+          else if ((y - top) < 2) r += 'k'; // dark roof line
+          else r += 'r';
         }
         rows.push(r);
       }
