@@ -15,7 +15,7 @@ import { playSound, setMuted, isMuted } from './game/sound.js';
 import { createHost, joinHost } from './net/peer.js';
 import { snapshotForClients, applySnapshot } from './net/sync.js';
 import { randomSeed } from './engine/rng.js';
-import { explodeAt } from './engine/terrain.js';
+import { explodeAt, addPlatform } from './engine/terrain.js';
 import { moveCharacter as moveChar } from './engine/physics.js';
 
 const App = {
@@ -98,6 +98,7 @@ function checkOrientation() {
 
 function startGame(config) {
   App.config = { ...config };
+  App.endShown = false;
   if (config.mode === 'host' && App.net && App.net.kind === 'host') {
     // Mix human peers + bots to fill playerCount.
     const peers = App.net.lobbyPlayers; // [{peerId, name}]
@@ -124,6 +125,10 @@ function startGame(config) {
   }
 
   App.state = createGameState(config);
+  // Host broadcasts terrain edits so clients stay in sync (snapshots don't carry the bitmap).
+  if (config.mode === 'host' && App.net && App.net.kind === 'host') {
+    App.state.onTerrainEvent = (ev) => App.net.api.broadcast({ type: 'terrain', ...ev });
+  }
   window.__APP_STATE__ = App.state;
   startTurn(App.state);
 
@@ -189,6 +194,10 @@ function tick(dt) {
   // Handle movement for local human active player.
   if (me && !me.outOfGame && !me.outOfWorld && me.isLocal && !me.isBot && App.state.turnState === 'aim') {
     handleMovement(me, dt);
+  }
+  // Apply network-relayed movement for remote active player (host-side only).
+  if (me && !me.outOfGame && !me.outOfWorld && !me.isLocal && !me.isBot && App.state.turnState === 'aim') {
+    applyRemoteMovement(me, dt);
   }
 
   // Bot turn logic.
@@ -277,6 +286,30 @@ function handleMovement(me, dt) {
   me.stateTime += dt;
 }
 
+function applyRemoteMovement(me, dt) {
+  const move = me._netMove || 0;
+  if (move !== 0 && me.moveLeft > 0 && me.grounded) {
+    me.vx = move * WALK_SPEED;
+    me.facing = move;
+    me.state = 'walk';
+    me.moveLeft -= Math.abs(WALK_SPEED) * dt;
+  } else if (me.grounded) {
+    me.vx = 0;
+    if (me.state !== 'throw') me.state = 'stand';
+  }
+  if (me._netJump) {
+    me._netJump = false;
+    if (me.grounded && me.moveLeft > 20) {
+      me.vy = JUMP_VY;
+      me.grounded = false;
+      me.moveLeft -= 30;
+      playSound('jump');
+    }
+  }
+  if (me.state === 'throw' && me.stateTime > 0.4) me.state = 'stand';
+  me.stateTime += dt;
+}
+
 function render() {
   if (!App.state) return;
   drawScene(App.ctx, App.state, App.controls);
@@ -313,6 +346,8 @@ function isLocalActivePlayer() {
 // ============ Networking ============
 
 async function hostLobby(config) {
+  if (App._hosting) return;
+  App._hosting = true;
   try {
     App.net = { kind: 'host', lobbyPlayers: [] };
     const api = await createHost({
@@ -333,6 +368,8 @@ async function hostLobby(config) {
     showScreen('screen-lobby');
   } catch (e) {
     alert('Host fehlgeschlagen: ' + (e.message || e));
+  } finally {
+    App._hosting = false;
   }
 }
 
@@ -340,6 +377,8 @@ function refreshLobby() {
   if (!App.net || App.net.kind !== 'host') return;
   const list = [{ name: 'Host', isHost: true }, ...App.net.lobbyPlayers.map(p => ({ name: p.name }))];
   setLobbyPlayers(list);
+  // Push the same list to every connected client so they see who's in.
+  if (App.net.api) App.net.api.broadcast({ type: 'lobby', players: list });
 }
 
 function startLobbyGame() {
@@ -397,13 +436,14 @@ function onHostMessage(peerId, msg) {
       const w = WEAPONS.find(w => w.id === msg.weaponId);
       if (!w) return;
       fireWeapon(App.state, player, w, msg);
-      markFired(App.state);
+      if (App.state.world.turnEnded || App.state.world.projectiles.length > 0) markFired(App.state);
     } else if (msg.kind === 'move') {
-      // Move requests applied next frame.
-      player._netMove = msg.dir;
+      player._netMove = Math.max(-1, Math.min(1, msg.dir | 0));
       if (msg.jump) player._netJump = true;
     } else if (msg.kind === 'selectWeapon') {
-      player.selectedWeaponIdx = msg.idx;
+      const len = WEAPONS.length;
+      const idx = Number.isFinite(msg.idx) ? msg.idx : 0;
+      player.selectedWeaponIdx = ((idx % len) + len) % len;
     }
   }
 }
@@ -432,14 +472,20 @@ function onClientMessage(msg) {
         } else closeWeaponWheel(App.hud);
       },
       onPauseToggle: togglePause,
-      sendInput: (input) => App.net.api.send({ type: 'input', kind: input.type, ...input })
+      sendInput: (input) => {
+        const { type: kind, ...rest } = input;
+        App.net.api.send({ type: 'input', kind, ...rest });
+      }
     });
   } else if (msg.type === 'snapshot') {
     if (App.state) applySnapshot(App.state, msg.snap);
   } else if (msg.type === 'terrain') {
-    if (App.state && msg.kind === 'explode') {
-      explodeAt(App.state.terrain, msg.x, msg.y, msg.r);
+    if (App.state) {
+      if (msg.kind === 'explode') explodeAt(App.state.terrain, msg.x, msg.y, msg.r);
+      else if (msg.kind === 'platform') addPlatform(App.state.terrain, msg.x, msg.y, msg.w, msg.h);
     }
+  } else if (msg.type === 'lobby') {
+    setLobbyPlayers(msg.players || []);
   } else if (msg.type === 'end') {
     showEndScreen(App.state);
   }

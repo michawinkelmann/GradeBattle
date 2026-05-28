@@ -42,7 +42,7 @@ export function makeCharacter(opts) {
     moveLeft: MOVE_BUDGET,
     variant,
     selectedWeaponIdx: 0,
-    weaponAmmo: {},          // optional per-match ammo overrides
+    weaponAmmo: { apfel: 2 },
     effectsActive: [],       // e.g. energydrink (extra movement)
     pendingExtraJump: false
   };

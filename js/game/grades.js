@@ -36,9 +36,9 @@ export function applyDamage(player, amount) {
   if (player.outOfGame) return 0;
   const before = player.points;
   player.points = Math.max(0, player.points - amount);
-  if (player.points <= 0) {
+  if (player.points <= 0 && !player.outOfGame) {
     player.outOfGame = true;
-    player.points = 0;
+    player._justFailed = true;
   }
   return before - player.points;
 }

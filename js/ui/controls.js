@@ -21,7 +21,9 @@ const KEY = {
 };
 
 export function getActiveWeapon(player) {
-  return WEAPONS[player.selectedWeaponIdx % WEAPONS.length];
+  const len = WEAPONS.length;
+  const i = Number.isFinite(player.selectedWeaponIdx) ? player.selectedWeaponIdx : 0;
+  return WEAPONS[((i % len) + len) % len];
 }
 
 export function createControls({ canvas, getState, getActiveLocalPlayer, onWeaponWheelToggle, onPauseToggle, sendInput }) {
@@ -30,11 +32,26 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
     aim: null,
     moveDir: 0,
     jumpRequested: false,
+    _lastSentMoveDir: 0,
   };
 
   let touchDetected = false;
   function ensureTouchLayout() {
     if (touchDetected) document.getElementById('touch-controls')?.classList.remove('hidden');
+  }
+
+  // For networked clients: relay movement/jump changes to the host.
+  if (sendInput) {
+    setInterval(() => {
+      if (input.moveDir !== input._lastSentMoveDir) {
+        sendInput({ type: 'move', dir: input.moveDir });
+        input._lastSentMoveDir = input.moveDir;
+      }
+      if (input.jumpRequested) {
+        sendInput({ type: 'move', dir: input.moveDir, jump: true });
+        input.jumpRequested = false;
+      }
+    }, 50);
   }
 
   document.querySelectorAll('#touch-controls .touch-btn').forEach(btn => {
@@ -75,6 +92,7 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
   });
 
   canvas.addEventListener('wheel', (e) => {
+    if (!getActiveLocalPlayer()) return;
     e.preventDefault();
     cycleWeapon(getActiveLocalPlayer, e.deltaY > 0 ? 1 : -1);
   }, { passive: false });
@@ -123,8 +141,10 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
     input.aim = {
       x: wpt.x, y: wpt.y,
       angle: 0, power: 0,
-      weaponId: weapon.id
+      weaponId: weapon.id,
+      pointerId: e.pointerId
     };
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
     e.preventDefault();
   }
 
@@ -159,6 +179,7 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
         }
       }
     }
+    try { if (input.aim.pointerId != null) canvas.releasePointerCapture(input.aim.pointerId); } catch (_) {}
     input.aim = null;
   }
 

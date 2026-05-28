@@ -25,6 +25,20 @@ export function startTurn(state) {
 // Called every fixed step.
 export function updateTurn(state, dt) {
   if (state.winner != null || state.endedReason) return;
+  // Promote out-of-world to out-of-game so the report card shows "6".
+  for (const p of state.players) {
+    if (p.outOfWorld && !p.outOfGame) {
+      p.outOfGame = true;
+      p.points = 0;
+      p._justFailed = true;
+    }
+    if (p._justFailed && !p._failLogged) {
+      p._failLogged = true;
+      const key = p.outOfWorld ? 'msg.outOfWorld' : 'msg.failed';
+      state.log.push(`${p.name} ${t(key)}`);
+      playSound('fail');
+    }
+  }
   // Continuous win check (catches out-of-world & external state mods).
   checkWinCondition(state);
   if (state.winner != null) return;
@@ -65,16 +79,10 @@ export function markFired(state) {
 }
 
 function finalizeTurn(state) {
-  // Apply out-of-world checks and grade fail messages.
+  // Make sure out-of-world chars are also marked out-of-game (updateTurn already does this).
   for (const p of state.players) {
-    if (p.outOfWorld && !p.outOfGame) {
+    if ((p.outOfWorld || p.points <= 0) && !p.outOfGame) {
       p.outOfGame = true;
-      state.log.push(`${p.name} ${t('msg.outOfWorld')}`);
-      playSound('fail');
-    } else if (p.points <= 0 && !p.outOfGame) {
-      p.outOfGame = true;
-      state.log.push(`${p.name} ${t('msg.failed')}`);
-      playSound('fail');
     }
   }
   state.turnState = 'ended';
