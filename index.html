@@ -44,10 +44,6 @@
           <input type="number" id="setup-players" min="2" max="4" value="2" />
         </label>
         <label>
-          <span data-i18n="setup.bots">Davon Bots</span>
-          <input type="number" id="setup-bots" min="0" max="3" value="1" />
-        </label>
-        <label>
           <span data-i18n="setup.botLevel">Bot-Schwierigkeit</span>
           <select id="setup-bot-level">
             <option value="easy" data-i18n="setup.botEasy">Leicht</option>
@@ -75,6 +71,10 @@
             <option value="turnhalle" data-i18n="setup.mapGym">Turnhalle</option>
           </select>
         </label>
+      </div>
+      <div class="players-list">
+        <div class="players-list-header" data-i18n="setup.charsHeader">Mitspieler:innen</div>
+        <div id="setup-players-list"></div>
       </div>
       <div class="row">
         <button class="btn" data-action="back" data-i18n="ui.back">Zurück</button>

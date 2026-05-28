@@ -86,6 +86,89 @@ html, body {
 }
 .lang-btn.active { background: var(--accent); color: #1b1f3a; }
 
+/* Player customizer slots in the setup screen. */
+.players-list {
+  margin-top: 14px;
+  width: 100%;
+  max-width: 460px;
+}
+.players-list-header {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+#setup-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.char-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-2);
+  border: 2px solid var(--border);
+  padding: 6px 8px;
+}
+.char-slot canvas {
+  width: 36px;
+  height: 54px;
+  image-rendering: pixelated;
+  background: #0a0c1e;
+  border: 1px solid var(--border);
+}
+.char-slot .name-input {
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 2px 4px;
+  flex: 1 1 0;
+  min-width: 60px;
+}
+.char-slot .opt-group {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.char-slot .opt-btn {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  cursor: pointer;
+  min-width: 22px;
+  min-height: 24px;
+}
+.char-slot .opt-btn:active { background: var(--accent); color: var(--bg); }
+.char-slot .opt-label {
+  color: var(--muted);
+  font-size: 0.7rem;
+  margin-right: 2px;
+}
+.char-slot .opt-toggle {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  min-height: 24px;
+}
+.char-slot .opt-toggle.on { background: var(--accent); color: var(--bg); border-color: #b8941f; }
+
+@media (pointer: coarse) {
+  .char-slot .opt-btn, .char-slot .opt-toggle { min-width: 32px; min-height: 36px; font-size: 0.85rem; }
+  .char-slot canvas { width: 42px; height: 64px; }
+}
+
 .form { display: flex; flex-direction: column; gap: 12px; min-width: 320px; max-width: 400px; width: 100%; }
 .form label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .form label.checkbox { justify-content: flex-start; }

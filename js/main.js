@@ -122,14 +122,19 @@ function startGame(config) {
   } else if (config.mode === 'client') {
     // Client path handled separately via remote snapshots.
   } else {
-    // single / hotseat
-    config.playerDefs = [];
-    const humanCount = Math.max(0, config.playerCount - config.botCount);
-    for (let i = 0; i < humanCount; i++) {
-      config.playerDefs.push({ name: config.mode === 'single' ? 'Du' : `Spieler ${i + 1}`, isBot: false, isLocal: true });
-    }
-    for (let i = 0; i < config.botCount; i++) {
-      config.playerDefs.push({ name: `Bot ${i + 1}`, isBot: true, isLocal: true });
+    // single / hotseat - the customizer has already produced playerDefs in
+    // menu.js readSetup(). Fall back to the legacy generator only if missing
+    // (e.g. when startGame is called programmatically by Rematch with the
+    // previous config that already has defs).
+    if (!Array.isArray(config.playerDefs) || config.playerDefs.length !== config.playerCount) {
+      config.playerDefs = [];
+      const humanCount = Math.max(0, config.playerCount - config.botCount);
+      for (let i = 0; i < humanCount; i++) {
+        config.playerDefs.push({ name: config.mode === 'single' ? 'Du' : `Spieler ${i + 1}`, isBot: false, isLocal: true });
+      }
+      for (let i = 0; i < config.botCount; i++) {
+        config.playerDefs.push({ name: `Bot ${i + 1}`, isBot: true, isLocal: true });
+      }
     }
   }
 
@@ -547,14 +552,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function readSetupFromDOM() {
   const playerCount = clamp(parseInt(document.getElementById('setup-players').value, 10) || 2, 2, 4);
-  const botCount = clamp(parseInt(document.getElementById('setup-bots').value, 10) || 0, 0, playerCount - 1);
   const botLevel = document.getElementById('setup-bot-level').value;
   const turnTime = clamp(parseInt(document.getElementById('setup-turn-time').value, 10) || 30, 10, 120);
   const roundLimitEnabled = document.getElementById('setup-round-limit').checked;
   const rounds = clamp(parseInt(document.getElementById('setup-rounds').value, 10) || 15, 3, 50);
   const map = document.getElementById('setup-map').value;
   const mode = document.getElementById('screen-setup').dataset.mode || 'single';
-  return { mode, playerCount, botCount, botLevel, turnTime, roundLimit: roundLimitEnabled ? rounds : null, map };
+  return { mode, playerCount, botCount: 0, botLevel, turnTime, roundLimit: roundLimitEnabled ? rounds : null, map };
 }
 
 function clamp(v, mn, mx) { return Math.max(mn, Math.min(mx, v)); }
