@@ -9,6 +9,7 @@ import { WEAPONS, isAimable, isInstant, isPlaceable } from '../game/weapons.js';
 import { fireWeapon } from '../game/effects.js';
 import { markFired } from '../game/turn.js';
 import { playSound } from '../game/sound.js';
+import { isConfirmFire } from './prefs.js';
 
 const KEY = {
   left: ['ArrowLeft', 'a', 'A'],
@@ -151,6 +152,11 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
 
     if (!isAimable(weapon)) return;
 
+    // Starting a fresh drag discards any pending confirm-fire.
+    if (input.pendingFire) {
+      input.pendingFire = null;
+      document.getElementById('fire-confirm')?.classList.add('hidden');
+    }
     input.aim = {
       x: wpt.x, y: wpt.y,
       angle: 0, power: 0,
@@ -184,7 +190,18 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
     if (state && me && state.turnState === 'aim') {
       const w = getActiveWeapon(me);
       if (w && isAimable(w) && input.aim.power > 0.08) {
-        if (sendInput) {
+        if (isConfirmFire()) {
+          // Freeze the aim; the player must tap the confirm button before
+          // we actually fire. They can also re-drag (overwrites this aim)
+          // or hit Cancel/Esc to abort.
+          input.pendingFire = {
+            weaponId: w.id,
+            angle: input.aim.angle,
+            power: input.aim.power
+          };
+          input.aim.frozen = true;
+          showFireConfirm(true);
+        } else if (sendInput) {
           sendInput({ type: 'fire', weaponId: w.id, angle: input.aim.angle, power: input.aim.power });
         } else {
           fireWeapon(state, me, w, { angle: input.aim.angle, power: input.aim.power });
@@ -193,8 +210,38 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
       }
     }
     try { if (input.aim.pointerId != null) canvas.releasePointerCapture(input.aim.pointerId); } catch (_) {}
-    input.aim = null;
+    if (!(input.aim && input.aim.frozen)) input.aim = null;
   }
+
+  function showFireConfirm(visible) {
+    document.getElementById('fire-confirm')?.classList.toggle('hidden', !visible);
+  }
+
+  // Hook up Confirm / Cancel buttons.
+  document.querySelector('#fire-confirm [data-action="fire-confirm"]')?.addEventListener('click', () => {
+    if (!input.pendingFire) return;
+    const state = getState();
+    const me = getActiveLocalPlayer();
+    if (!state || !me) return;
+    const p = input.pendingFire;
+    if (sendInput) {
+      sendInput({ type: 'fire', weaponId: p.weaponId, angle: p.angle, power: p.power });
+    } else {
+      const w = WEAPONS.find(w => w.id === p.weaponId);
+      if (w) {
+        fireWeapon(state, me, w, { angle: p.angle, power: p.power });
+        markFired(state);
+      }
+    }
+    input.pendingFire = null;
+    input.aim = null;
+    showFireConfirm(false);
+  });
+  document.querySelector('#fire-confirm [data-action="fire-cancel"]')?.addEventListener('click', () => {
+    input.pendingFire = null;
+    input.aim = null;
+    showFireConfirm(false);
+  });
 
   return input;
 }

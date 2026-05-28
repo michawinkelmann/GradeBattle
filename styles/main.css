@@ -355,6 +355,27 @@ body:has(#touch-controls:not(.hidden)) #hud-current {
   margin-bottom: 80px;
 }
 
+/* Fire-confirm box: shows after drag-release when "Wurf bestätigen" is on. */
+#fire-confirm {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+  z-index: 6;
+  background: rgba(10, 12, 30, 0.85);
+  border: 2px solid var(--accent);
+  padding: 8px 10px;
+  box-shadow: var(--shadow);
+}
+#fire-confirm.hidden { display: none; }
+#fire-confirm .btn { padding: 8px 18px; min-height: 40px; }
+@media (pointer: coarse) {
+  #fire-confirm .btn { min-width: 70px; min-height: 48px; font-size: 1rem; }
+}
+
 /* Tiny "Bot überlegt…" indicator centred above the bottom HUD. */
 #bot-thinking {
   position: absolute;
