@@ -296,7 +296,7 @@ export function stepWorld(state, dt) {
         continue;
       }
       // Mine: instead of exploding, plant.
-      if (p.isMine && p.age > 0.2) {
+      if (p.isMine) {
         world.mines.push({
           x: p.x, y: p.y, radius: p.radius, damage: p.damage,
           ownerId: p.ownerId, armed: false, armTime: 0.6, age: 0

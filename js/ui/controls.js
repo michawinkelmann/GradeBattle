@@ -101,7 +101,7 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
         sendInput({ type: 'fire', weaponId: weapon.id, targetX: wpt.x, targetY: wpt.y });
       } else {
         fireWeapon(state, me, weapon, { targetX: wpt.x, targetY: wpt.y });
-        markFired(state);
+        if (state.world.turnEnded || state.world.projectiles.length > 0) markFired(state);
       }
       e.preventDefault();
       return;
@@ -112,7 +112,7 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
         sendInput({ type: 'fire', weaponId: weapon.id });
       } else {
         fireWeapon(state, me, weapon, {});
-        markFired(state);
+        if (state.world.turnEnded || state.world.projectiles.length > 0) markFired(state);
       }
       e.preventDefault();
       return;
