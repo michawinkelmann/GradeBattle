@@ -9,6 +9,7 @@ import { setupHud, renderHud, openWeaponWheel, closeWeaponWheel, invalidateHud }
 import { setupMenu, showScreen, setLobbyCode, setLobbyPlayers, showEndScreen } from './ui/menu.js';
 import { createControls, getActiveWeapon } from './ui/controls.js';
 import { bindTutorialControls, showTutorial, hasSeenTutorial } from './ui/tutorial.js';
+import { bindSettingsControls, setOnMuteChanged } from './ui/settings.js';
 import { drawScene } from './render/scene.js';
 import { WEAPONS } from './game/weapons.js';
 import { planBotTurn, executeBotPlan } from './ai/bot.js';
@@ -45,12 +46,15 @@ async function boot() {
   App.hud = setupHud();
 
   // HUD buttons
+  function syncMuteButton() {
+    App.hud.btnMute.textContent = isMuted() ? '🔇' : '🔊';
+  }
   App.hud.btnMute.addEventListener('click', () => {
-    const m = !isMuted();
-    setMuted(m);
-    App.hud.btnMute.textContent = m ? '🔇' : '🔊';
+    setMuted(!isMuted());
+    syncMuteButton();
   });
-  App.hud.btnMute.textContent = isMuted() ? '🔇' : '🔊';
+  syncMuteButton();
+  setOnMuteChanged(syncMuteButton);
 
   App.hud.btnPause.addEventListener('click', togglePause);
   App.hud.btnWeapons.addEventListener('click', () => {
@@ -92,6 +96,8 @@ async function boot() {
   if (!hasSeenTutorial()) {
     setTimeout(() => showTutorial(), 250);
   }
+  // Settings screen wiring.
+  bindSettingsControls();
 
   showScreen('screen-menu');
 }

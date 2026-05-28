@@ -169,6 +169,26 @@ html, body {
   .char-slot canvas { width: 42px; height: 64px; }
 }
 
+/* Slider row in settings */
+.slider-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.slider-row input[type="range"] {
+  flex: 1 1 0;
+  width: auto;
+  accent-color: var(--accent);
+}
+.slider-val {
+  color: var(--accent);
+  font-weight: bold;
+  min-width: 44px;
+  text-align: right;
+}
+.settings-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
+
 .form { display: flex; flex-direction: column; gap: 12px; min-width: 320px; max-width: 400px; width: 100%; }
 .form label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .form label.checkbox { justify-content: flex-start; }
