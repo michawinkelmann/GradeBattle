@@ -1,8 +1,9 @@
 // Lightweight WebAudio SFX. All synthesized – no asset files.
 
 let ctxRef = null;
-let muted = false;
-let volume = 0.5;
+let muted = localStorage.getItem('gradebattle.mute') === '1';
+const persistedVol = parseFloat(localStorage.getItem('gradebattle.volume'));
+let volume = Number.isFinite(persistedVol) ? Math.max(0, Math.min(1, persistedVol)) : 0.5;
 
 function ctx() {
   if (!ctxRef) {
@@ -21,11 +22,12 @@ export function setMuted(m) {
   muted = !!m;
   localStorage.setItem('gradebattle.mute', muted ? '1' : '0');
 }
-export function isMuted() {
-  if (localStorage.getItem('gradebattle.mute') === '1') muted = true;
-  return muted;
+export function isMuted() { return muted; }
+export function setVolume(v) {
+  volume = Math.max(0, Math.min(1, v));
+  localStorage.setItem('gradebattle.volume', String(volume));
 }
-export function setVolume(v) { volume = Math.max(0, Math.min(1, v)); }
+export function getVolume() { return volume; }
 
 function tone({ freq = 440, type = 'sine', dur = 0.15, attack = 0.005, decay = 0.1, gain = 0.4, freqEnd, filter }) {
   const ac = ctx();

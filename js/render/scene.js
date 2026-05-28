@@ -6,6 +6,7 @@ import { getActiveWeapon } from '../ui/controls.js';
 import { getBackdrop, getFarBackdrop } from './sprites.js';
 import { previewTrajectory } from '../engine/physics.js';
 import { isAimable, isPlaceable } from '../game/weapons.js';
+import { isReducedMotion } from '../ui/prefs.js';
 
 // Procedural cloud field — fixed positions, drift via offset using wind & camera.
 const CLOUDS = [
@@ -96,14 +97,15 @@ export function drawScene(ctx, state, input) {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
+  const reduced = isReducedMotion();
   // Clouds drifting in the sky — outdoor maps only.
-  if (terrain.themeName === 'schulhof') {
+  if (!reduced && terrain.themeName === 'schulhof') {
     drawClouds(ctx, terrain, camera, state.wind);
   }
 
   // Wind streaks: short horizontal lines flying in the wind's direction.
   // Number of streaks scales with |wind|; speed too. At wind 0 nothing renders.
-  drawWindStreaks(ctx, state.wind);
+  if (!reduced) drawWindStreaks(ctx, state.wind);
 
   // Parallax: far layer (very slow drift) drawn behind, near layer drawn in front.
   const baseLine = terrain.height * 0.5;
@@ -165,7 +167,10 @@ export function drawScene(ctx, state, input) {
       const vy = Math.sin(input.aim.angle) * speed;
       const startX = me.x + Math.cos(input.aim.angle) * 12;
       const startY = me.y - me.h * 0.7 + Math.sin(input.aim.angle) * 12;
-      const pts = previewTrajectory(startX, startY, vx, vy, state.wind, wp.windFactor || 0);
+      const pts = previewTrajectory(
+        startX, startY, vx, vy, state.wind, wp.windFactor || 0,
+        60, 0.05, wp.gravityScale != null ? wp.gravityScale : 1
+      );
       // Dotted trajectory (slightly bigger so it's readable on phones).
       ctx.fillStyle = 'rgba(255,213,74,0.85)';
       for (let i = 0; i < pts.length; i += 2) {

@@ -102,6 +102,11 @@ function spawnSalvo(state, attacker, w, angle, power) {
     power,
     attackerId: attacker.id
   };
+  // Fire the first shot immediately so worldBusy()/markFired observe activity
+  // (otherwise the host- and bot-side `world.projectiles.length > 0` checks
+  // miss the salvo and the turn doesn't transition to 'inflight').
+  spawnProjectile(state, attacker, w, angle, power);
+  state.world.pendingSalvo.count -= 1;
 }
 
 function triggerArea(state, attacker, w) {
@@ -168,6 +173,16 @@ function triggerUtility(state, attacker, w, params) {
       if (ammo != null && ammo <= 0) {
         // Out of apples - turn was wasted (still ends).
         state.world.turnEnded = true;
+        break;
+      }
+      // Already at full health: don't burn an apple, don't end the turn.
+      if (attacker.points >= 100) {
+        playSound('soft');
+        state.world.particles.push({
+          x: attacker.x, y: attacker.y - attacker.h, vx: 0, vy: -20,
+          life: 0.9, age: 0, color: '#b9c0d8', kind: 'text', text: '✓'
+        });
+        state.world.turnEnded = false;
         break;
       }
       const before = attacker.points;

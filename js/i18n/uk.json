@@ -7,6 +7,14 @@
   "menu.netHost": "Створити гру (мережа)",
   "menu.netJoin": "Приєднатися до гри",
   "menu.settings": "Налаштування",
+  "settings.title": "Налаштування",
+  "settings.volume": "Гучність",
+  "settings.mute": "Без звуку",
+  "settings.reducedMotion": "Зменшити анімації",
+  "settings.hotkeyHint": "Клавіатура в грі: Esc = пауза, Tab = колесо зброї, Q/E = зміна зброї, ↑/W/Пробіл = стрибок.",
+  "settings.replayTutorial": "Показати інструкцію знову",
+  "settings.reset": "Скинути",
+  "settings.confirmReset": "Скинути всі налаштування, статус інструкції та слоти гравців?",
   "menu.tutorial": "Як грати",
   "tutorial.aim.title": "Прицілювання",
   "tutorial.aim.body": "Потягни від свого персонажа, як з рогатки – напрямок + сила. Відпусти, щоб кинути. Пунктирна лінія показує траєкторію.",
@@ -123,6 +131,8 @@
   "char.bot": "Бот",
   "msg.outOfWorld": "впав зі світу",
   "msg.failed": "залишився на другий рік",
+  "msg.timeUp": "Час!",
+  "msg.botThinking": "Бот думає…",
   "msg.connecting": "Підключення…",
   "msg.hostLost": "Втрачено з'єднання з хостом"
 }

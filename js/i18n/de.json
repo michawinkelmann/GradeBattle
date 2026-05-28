@@ -6,6 +6,14 @@
   "menu.netHost": "Spiel erstellen (Netzwerk)",
   "menu.netJoin": "Spiel beitreten",
   "menu.settings": "Einstellungen",
+  "settings.title": "Einstellungen",
+  "settings.volume": "Lautstärke",
+  "settings.mute": "Ton aus",
+  "settings.reducedMotion": "Animationen reduzieren",
+  "settings.hotkeyHint": "Tastatur im Spiel: Esc = Pause, Tab = Waffenrad, Q/E = Waffe wechseln, ↑/W/Leertaste = Springen.",
+  "settings.replayTutorial": "Anleitung erneut zeigen",
+  "settings.reset": "Zurücksetzen",
+  "settings.confirmReset": "Alle Einstellungen, Tutorial-Status und Spieler-Slots zurücksetzen?",
   "menu.tutorial": "Anleitung",
   "tutorial.aim.title": "Zielen",
   "tutorial.aim.body": "Ziehe vom eigenen Charakter weg wie an einer Steinschleuder – Richtung + Stärke. Beim Loslassen wird geworfen. Die gepunktete Linie zeigt die Flugbahn.",
@@ -122,6 +130,8 @@
   "char.bot": "Bot",
   "msg.outOfWorld": "ist aus der Welt gefallen",
   "msg.failed": "ist sitzengeblieben",
+  "msg.timeUp": "Zeit!",
+  "msg.botThinking": "Bot überlegt…",
   "msg.connecting": "Verbinde…",
   "msg.hostLost": "Verbindung zum Host verloren"
 }

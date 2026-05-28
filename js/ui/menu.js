@@ -2,8 +2,9 @@ import { setLang, t, applyToDom } from '../i18n/i18n.js';
 import { playSound } from '../game/sound.js';
 import { showTutorial } from './tutorial.js';
 import { renderPlayerSlots, refreshPlayerSlots, buildPlayerDefs } from './customizer.js';
+import { openSettings } from './settings.js';
 
-const SCREEN_IDS = ['screen-menu', 'screen-setup', 'screen-lobby', 'screen-join', 'screen-game', 'screen-end'];
+const SCREEN_IDS = ['screen-menu', 'screen-setup', 'screen-lobby', 'screen-join', 'screen-game', 'screen-end', 'screen-settings'];
 
 export function showScreen(id) {
   for (const s of SCREEN_IDS) {
@@ -22,6 +23,7 @@ export function setupMenu({ onStart, onHostLobby, onJoinLobby, onStartLobby, onL
       else if (a === 'net-host') openSetup('host');
       else if (a === 'net-join') showScreen('screen-join');
       else if (a === 'tutorial') showTutorial();
+      else if (a === 'settings') openSettings();
     });
   });
 

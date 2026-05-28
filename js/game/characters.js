@@ -3,9 +3,10 @@ import { MAX_POINTS } from './grades.js';
 
 export const CHAR_W = 10;
 export const CHAR_H = 18;
-export const WALK_SPEED = 50;       // px/s
-export const JUMP_VY = -180;
-export const MOVE_BUDGET = 200;     // px per turn
+export const WALK_SPEED = 55;       // px/s
+export const JUMP_VY = -200;
+export const MOVE_BUDGET = 340;     // px per turn (was 200 — too tight for tablet play)
+export const JUMP_COST = 15;        // px deducted per jump (was 30)
 
 // Shirt/hair color combos + style modifiers for visual differentiation.
 // style: 'default' | 'pony' (ponytail) | 'bun' | 'short'

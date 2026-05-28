@@ -28,6 +28,7 @@
         <button class="btn primary" data-action="net-host" data-i18n="menu.netHost">Spiel erstellen</button>
         <button class="btn primary" data-action="net-join" data-i18n="menu.netJoin">Spiel beitreten</button>
         <button class="btn" data-action="tutorial" data-i18n="menu.tutorial">Anleitung</button>
+        <button class="btn" data-action="settings" data-i18n="menu.settings">Einstellungen</button>
       </nav>
       <footer class="lang-bar">
         <button class="lang-btn" data-lang="de">DE</button>
@@ -56,12 +57,12 @@
           <input type="number" id="setup-turn-time" min="10" max="120" value="30" />
         </label>
         <label class="checkbox">
-          <input type="checkbox" id="setup-round-limit" />
+          <input type="checkbox" id="setup-round-limit" checked />
           <span data-i18n="setup.roundLimit">Rundenlimit aktiv</span>
         </label>
         <label>
           <span data-i18n="setup.rounds">Maximale Runden</span>
-          <input type="number" id="setup-rounds" min="3" max="50" value="15" />
+          <input type="number" id="setup-rounds" min="3" max="50" value="20" />
         </label>
         <label>
           <span data-i18n="setup.map">Map-Thema</span>
@@ -132,6 +133,7 @@
           </div>
           <button class="hud-btn" id="btn-weapons" data-i18n="hud.weapons">Waffen</button>
         </div>
+        <div id="bot-thinking" class="hidden"><span data-i18n="msg.botThinking">Bot überlegt…</span></div>
         <div id="touch-controls" class="hidden">
           <button class="touch-btn" data-touch="left">◀</button>
           <button class="touch-btn" data-touch="right">▶</button>
@@ -154,6 +156,33 @@
       <div class="row">
         <button class="btn primary" data-action="rematch" data-i18n="end.rematch">Nochmal</button>
         <button class="btn" data-action="to-menu" data-i18n="end.menu">Hauptmenü</button>
+      </div>
+    </div>
+
+    <div id="screen-settings" class="screen">
+      <h2 data-i18n="settings.title">Einstellungen</h2>
+      <div class="form">
+        <label class="slider-row">
+          <span data-i18n="settings.volume">Lautstärke</span>
+          <input type="range" id="setting-volume" min="0" max="100" value="50" />
+          <span id="setting-volume-val" class="slider-val">50%</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="setting-mute" />
+          <span data-i18n="settings.mute">Ton aus</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="setting-reduced-motion" />
+          <span data-i18n="settings.reducedMotion">Animationen reduzieren</span>
+        </label>
+        <p class="settings-hint" data-i18n="settings.hotkeyHint">Tastatur im Spiel: Esc = Pause, Tab = Waffen, Q/E = Waffe wechseln, ↑/W/Leertaste = Springen.</p>
+      </div>
+      <div class="row">
+        <button class="btn" data-action="settings-tutorial" data-i18n="settings.replayTutorial">Anleitung erneut zeigen</button>
+        <button class="btn" data-action="settings-reset" data-i18n="settings.reset">Zurücksetzen</button>
+      </div>
+      <div class="row">
+        <button class="btn primary" data-action="back" data-i18n="ui.back">Zurück</button>
       </div>
     </div>
 
