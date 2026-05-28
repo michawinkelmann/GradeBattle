@@ -145,16 +145,41 @@ function charWalk2(shirtKey = 'B', hairKey = 'h') {
 }
 
 function charThrow(shirtKey = 'B', hairKey = 'h') {
+  // Wind-up: arm pulled back behind the head.
   return [
-    '____HHHH____',
-    '___HhhhhH___',
-    '__HSSSSSSH__',
+    'SS__HHHH____',
+    'SS_HhhhhH___',
+    '_SHSSSSSSH__',
     '__HSWSWSSH__',
     '__HSSSSSSH__',
     '__HSSnSSSH__',
     '___SSSSSS___',
+    '___BBBBBB___',
+    '__BBBBBBBB__',
+    '__BBBBBBBB__',
+    '__BBBBBBBB__',
+    '__BBSSSSBB__',
+    '__BBBBBBBB__',
+    '___bbbbbb___',
+    '___kkkkkk___',
+    '___kk__kk___',
+    '___kk__kk___',
+    '___KK__KK___'
+  ].map(s => s.replace(/h/g, hairKey)).map(s => s.replace(/B/g, shirtKey));
+}
+
+function charThrow2(shirtKey = 'B', hairKey = 'h') {
+  // Release: arm extended forward and up.
+  return [
+    '____HHHH___S',
+    '___HhhhhH_SS',
+    '__HSSSSSSHS_',
+    '__HSWSWSSH__',
+    '__HSSSSSSH__',
+    '__HSSnSSSH__',
+    '___SSSSSSSS_',
     '___BBBBBBSS_',
-    '__BBBBBBBSS_',
+    '__BBBBBBBB__',
     '__BBBBBBBB__',
     '__BBBBBBBB__',
     '__BBBBBBBB__',
@@ -838,7 +863,12 @@ export function getCharSprite(state, opts = {}, frame = 0) {
       ? rasterize(`char_walk_${shirt}_${hair}`, () => charWalk(shirt, hair))
       : rasterize(`char_walk2_${shirt}_${hair}`, () => charWalk2(shirt, hair));
   }
-  if (state === 'throw') return rasterize(`char_throw_${shirt}_${hair}`, () => charThrow(shirt, hair));
+  if (state === 'throw') {
+    // 0..0.15s: wind-up; after that: release.
+    return frame === 0
+      ? rasterize(`char_throw_${shirt}_${hair}`, () => charThrow(shirt, hair))
+      : rasterize(`char_throw2_${shirt}_${hair}`, () => charThrow2(shirt, hair));
+  }
   if (state === 'sit') return rasterize(`char_sit_${shirt}_${hair}`, () => charSit(shirt, hair));
   return rasterize(`char_stand_${shirt}_${hair}`, () => charStand(shirt, hair));
 }

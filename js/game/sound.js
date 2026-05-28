@@ -73,18 +73,51 @@ function noise({ dur = 0.3, gain = 0.4, freq = 1500, type = 'lowpass' }) {
   src.stop(t0 + dur);
 }
 
-export function playSound(id) {
+// Pitch jitter so identical actions don't sound robotic. Returns 0.88..1.12.
+function jitter(min = 0.92, max = 1.1) { return min + Math.random() * (max - min); }
+
+export function playSound(id, opts = {}) {
   if (muted) return;
   switch (id) {
-    case 'throw':
-      tone({ freq: 480, freqEnd: 240, type: 'triangle', dur: 0.15, gain: 0.25 });
+    case 'throw': {
+      const j = jitter(0.85, 1.15);
+      tone({ freq: 480 * j, freqEnd: 240 * j, type: 'triangle', dur: 0.15, gain: 0.25 });
       break;
-    case 'explode':
-      noise({ dur: 0.4, gain: 0.5, freq: 600, type: 'lowpass' });
-      tone({ freq: 120, freqEnd: 40, type: 'sawtooth', dur: 0.3, gain: 0.3 });
+    }
+    case 'explode': {
+      const j = jitter(0.85, 1.15);
+      const big = opts.radius && opts.radius > 50;
+      noise({ dur: big ? 0.55 : 0.4, gain: big ? 0.55 : 0.5, freq: 600 * j, type: 'lowpass' });
+      tone({ freq: 120 * j, freqEnd: 40, type: 'sawtooth', dur: big ? 0.4 : 0.3, gain: 0.3 });
+      if (big) tone({ freq: 60, freqEnd: 30, type: 'sine', dur: 0.5, gain: 0.25 });
       break;
+    }
+    case 'splash': {
+      // Wasserbombe: high-freq splash + low gulp.
+      noise({ dur: 0.35, gain: 0.45, freq: 2200, type: 'bandpass' });
+      tone({ freq: 200, freqEnd: 90, type: 'sine', dur: 0.25, gain: 0.25 });
+      break;
+    }
+    case 'chalk': {
+      // Soft puff for kreide / stinkekaese.
+      noise({ dur: 0.45, gain: 0.25, freq: 1400, type: 'lowpass' });
+      break;
+    }
+    case 'paper': {
+      // Light flutter for book / paper.
+      const j = jitter();
+      noise({ dur: 0.15, gain: 0.2, freq: 3000, type: 'highpass' });
+      tone({ freq: 300 * j, freqEnd: 180 * j, type: 'triangle', dur: 0.18, gain: 0.18 });
+      break;
+    }
+    case 'heavy': {
+      // Laptop / megaphon thud.
+      noise({ dur: 0.5, gain: 0.55, freq: 280, type: 'lowpass' });
+      tone({ freq: 90, freqEnd: 30, type: 'square', dur: 0.4, gain: 0.4 });
+      break;
+    }
     case 'jump':
-      tone({ freq: 320, freqEnd: 560, type: 'square', dur: 0.12, gain: 0.2 });
+      tone({ freq: 320 * jitter(), freqEnd: 560 * jitter(), type: 'square', dur: 0.12, gain: 0.2 });
       break;
     case 'click':
       tone({ freq: 800, type: 'square', dur: 0.05, gain: 0.15 });

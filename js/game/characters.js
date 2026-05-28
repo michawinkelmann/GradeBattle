@@ -61,8 +61,10 @@ export function drawCharacter(ctx, ch) {
     ctx.ellipse(ch.x, ch.y + 1, 6, 1.5, 0, 0, Math.PI * 2);
     ctx.fill();
   }
-  // Walk cycle ~6 fps; idle/throw don't use the frame.
-  const frame = ch.state === 'walk' ? Math.floor(ch.stateTime * 6) : 0;
+  // Walk cycle ~6 fps; throw plays wind-up -> release.
+  let frame = 0;
+  if (ch.state === 'walk') frame = Math.floor(ch.stateTime * 6);
+  else if (ch.state === 'throw') frame = ch.stateTime < 0.12 ? 0 : 1;
   const sp = getCharSprite(ch.outOfGame ? 'sit' : ch.state, ch.variant, frame);
   const flip = ch.facing < 0;
   const sx = Math.round(ch.x - sp.width / 2);
