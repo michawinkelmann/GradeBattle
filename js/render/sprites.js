@@ -97,6 +97,7 @@ function charStand(shirtKey = 'B', hairKey = 'h') {
 }
 
 function charWalk(shirtKey = 'B', hairKey = 'h') {
+  // Stride frame: legs apart, body lifted by 1 px.
   return [
     '____HHHH____',
     '___HhhhhH___',
@@ -113,9 +114,33 @@ function charWalk(shirtKey = 'B', hairKey = 'h') {
     '__BBBBBBBB__',
     '___bbbbbb___',
     '__kkkkkkkk__',
-    '__kk___kkk__',
-    '_kk_____kk__',
-    '_KK_____KK__'
+    '__kk____kk__',
+    '_kk______kk_',
+    'KK________KK'
+  ].map(s => s.replace(/h/g, hairKey)).map(s => s.replace(/B/g, shirtKey));
+}
+
+function charWalk2(shirtKey = 'B', hairKey = 'h') {
+  // Passing frame: legs together, slight squash.
+  return [
+    '____________',
+    '____HHHH____',
+    '___HhhhhH___',
+    '__HSSSSSSH__',
+    '__HSWSWSSH__',
+    '__HSSSSSSH__',
+    '__HSSnSSSH__',
+    '___SSSSSS___',
+    '___BBBBBB___',
+    '__BBBBBBBB__',
+    '__BBBBBBBB__',
+    '__BSSSSSSB__',
+    '__BBBBBBBB__',
+    '___bbbbbb___',
+    '___kkkkkk___',
+    '___kk__kk___',
+    '___kk__kk___',
+    '___KK__KK___'
   ].map(s => s.replace(/h/g, hairKey)).map(s => s.replace(/B/g, shirtKey));
 }
 
@@ -805,10 +830,14 @@ function projectileGrid(type) {
   return map[type] || map.book;
 }
 
-export function getCharSprite(state, opts = {}) {
+export function getCharSprite(state, opts = {}, frame = 0) {
   const shirt = opts.shirt || 'B';
   const hair = opts.hair || 'h';
-  if (state === 'walk') return rasterize(`char_walk_${shirt}_${hair}`, () => charWalk(shirt, hair));
+  if (state === 'walk') {
+    return frame % 2 === 0
+      ? rasterize(`char_walk_${shirt}_${hair}`, () => charWalk(shirt, hair))
+      : rasterize(`char_walk2_${shirt}_${hair}`, () => charWalk2(shirt, hair));
+  }
   if (state === 'throw') return rasterize(`char_throw_${shirt}_${hair}`, () => charThrow(shirt, hair));
   if (state === 'sit') return rasterize(`char_sit_${shirt}_${hair}`, () => charSit(shirt, hair));
   return rasterize(`char_stand_${shirt}_${hair}`, () => charStand(shirt, hair));

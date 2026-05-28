@@ -424,7 +424,8 @@ export function explode(state, p, x, y) {
     const closeness = applyExplosion(c, x, y, p.radius, p.knockback || 200);
     if (closeness > 0) {
       const dmg = Math.round(p.damage * closeness);
-      applyDamage(c, dmg);
+      const actual = applyDamage(c, dmg);
+      if (actual > 0) spawnHitFeedback(state.world, c, actual);
     }
   }
 
@@ -473,6 +474,31 @@ function spawnParticles(world, x, y, count, color) {
       gravity: 200,
       life: 0.5 + Math.random() * 0.4, age: 0,
       color, kind: 'dot'
+    });
+  }
+}
+
+function spawnHitFeedback(world, ch, dmg) {
+  // Floating damage number.
+  world.particles.push({
+    x: ch.x, y: ch.y - ch.h - 4,
+    vx: (Math.random() - 0.5) * 20, vy: -40,
+    gravity: 30,
+    life: 0.9, age: 0,
+    color: '#ef5b5b',
+    kind: 'text',
+    text: `-${dmg}`
+  });
+  // Two stars above the head.
+  for (let i = 0; i < 3; i++) {
+    const a = -Math.PI / 2 + (i - 1) * 0.4;
+    world.particles.push({
+      x: ch.x, y: ch.y - ch.h,
+      vx: Math.cos(a) * 30, vy: Math.sin(a) * 30,
+      gravity: 60,
+      life: 0.6, age: 0,
+      color: '#ffd54a',
+      kind: 'star'
     });
   }
 }
@@ -544,11 +570,22 @@ export function drawWorld(ctx, state) {
       ctx.stroke();
       ctx.globalAlpha = 1;
     } else if (pt.kind === 'text') {
-      ctx.font = '8px monospace';
-      ctx.fillStyle = pt.color;
+      ctx.font = 'bold 8px monospace';
       ctx.globalAlpha = 1 - (pt.age / pt.life);
       ctx.textAlign = 'center';
-      ctx.fillText(pt.text, pt.x, pt.y);
+      // Black outline so it's readable against any backdrop.
+      ctx.fillStyle = '#0a0c1e';
+      ctx.fillText(pt.text, Math.round(pt.x) + 1, Math.round(pt.y) + 1);
+      ctx.fillStyle = pt.color;
+      ctx.fillText(pt.text, Math.round(pt.x), Math.round(pt.y));
+      ctx.globalAlpha = 1;
+    } else if (pt.kind === 'star') {
+      // Five-pixel cross with a center dot.
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, 1 - pt.age / pt.life);
+      const x = Math.round(pt.x), y = Math.round(pt.y);
+      ctx.fillRect(x - 1, y, 3, 1);
+      ctx.fillRect(x, y - 1, 1, 3);
       ctx.globalAlpha = 1;
     } else {
       ctx.fillStyle = pt.color;

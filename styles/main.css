@@ -365,19 +365,52 @@ body:has(#touch-controls:not(.hidden)) #hud-current {
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 #end-report {
-  background: var(--bg-2);
-  border: 2px solid var(--border);
-  padding: 20px;
-  min-width: 320px;
+  background: #f8f1e0;
+  color: #2a2a2a;
+  border: 2px solid #b89c6a;
+  padding: 24px 28px;
+  min-width: 360px;
+  max-width: 460px;
   font-family: 'Courier New', monospace;
+  position: relative;
+  box-shadow: 0 6px 0 #0a0c1e, inset 0 0 0 2px #f8f1e0, inset 0 0 0 3px #b89c6a;
+}
+#end-report::before {
+  content: 'ZEUGNIS';
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  background: #d72020;
+  color: #f8f1e0;
+  padding: 2px 12px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  border: 2px solid #f8f1e0;
+  box-shadow: 0 2px 0 #6a0f0f;
+  font-size: 0.85rem;
 }
 .report-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px dashed var(--border);
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px dashed #b89c6a;
+  font-size: 1rem;
 }
-.report-row.winner { color: var(--accent); font-weight: bold; }
+.report-row:last-child { border-bottom: none; }
+.report-row.winner {
+  color: #b8941f;
+  font-weight: bold;
+  background: rgba(255, 213, 74, 0.18);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.report-row.winner::after {
+  content: '★';
+  margin-left: 8px;
+  color: #d72020;
+}
 
 @media (max-width: 600px) {
   .title h1 { font-size: 2rem; }
