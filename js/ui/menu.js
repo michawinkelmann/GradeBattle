@@ -1,6 +1,7 @@
 import { setLang, t, applyToDom } from '../i18n/i18n.js';
 import { playSound } from '../game/sound.js';
 import { showTutorial } from './tutorial.js';
+import { renderPlayerSlots, refreshPlayerSlots, buildPlayerDefs } from './customizer.js';
 
 const SCREEN_IDS = ['screen-menu', 'screen-setup', 'screen-lobby', 'screen-join', 'screen-game', 'screen-end'];
 
@@ -89,21 +90,27 @@ export function setupMenu({ onStart, onHostLobby, onJoinLobby, onStartLobby, onL
   // Mode-tag for setup so we know what we are building.
   function openSetup(mode) {
     document.getElementById('screen-setup').dataset.mode = mode;
-    const isHost = mode === 'host';
-    // Hide bot-only fields for host? Keep available; in host mode bots are also allowed.
+    const playerInput = document.getElementById('setup-players');
+    renderPlayerSlots(parseInt(playerInput.value, 10) || 2);
     showScreen('screen-setup');
   }
+
+  // Re-render slots when player count changes.
+  document.getElementById('setup-players').addEventListener('input', (e) => {
+    const n = clamp(parseInt(e.target.value, 10) || 2, 2, 4);
+    renderPlayerSlots(n);
+  });
 
   function readSetup() {
     const mode = document.getElementById('screen-setup').dataset.mode || 'single';
     const playerCount = clamp(parseInt(document.getElementById('setup-players').value, 10) || 2, 2, 4);
-    let botCount = clamp(parseInt(document.getElementById('setup-bots').value, 10) || 0, 0, playerCount - (mode === 'single' ? 0 : 1));
-    if (mode === 'single' && botCount === 0) botCount = playerCount - 1;
     const botLevel = document.getElementById('setup-bot-level').value;
     const turnTime = clamp(parseInt(document.getElementById('setup-turn-time').value, 10) || 30, 10, 120);
     const roundLimitEnabled = document.getElementById('setup-round-limit').checked;
     const rounds = clamp(parseInt(document.getElementById('setup-rounds').value, 10) || 15, 3, 50);
     const map = document.getElementById('setup-map').value;
+    const playerDefs = buildPlayerDefs(playerCount, mode === 'single');
+    const botCount = playerDefs.filter(d => d.isBot).length;
     return {
       mode,
       playerCount,
@@ -111,7 +118,8 @@ export function setupMenu({ onStart, onHostLobby, onJoinLobby, onStartLobby, onL
       botLevel,
       turnTime,
       roundLimit: roundLimitEnabled ? rounds : null,
-      map
+      map,
+      playerDefs
     };
   }
 }

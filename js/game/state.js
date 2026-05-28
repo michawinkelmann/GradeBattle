@@ -24,6 +24,8 @@ export function createGameState(config) {
       botLevel: config.botLevel,
       isLocal: p?.isLocal ?? true,
       peerId: p?.peerId || null,
+      // Customized look (if the slot was edited), else fall back to the i-th default.
+      variant: p?.variant,
       variantIndex: i,
       x: spots[i].x,
       y: spots[i].y,

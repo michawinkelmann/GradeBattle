@@ -10,7 +10,14 @@ export const MOVE_BUDGET = 200;     // px per turn
 // Shirt/hair color combos + style modifiers for visual differentiation.
 // style: 'default' | 'pony' (ponytail) | 'bun' | 'short'
 // glasses: bool — small frames over the eyes
-const VARIANTS = [
+export const SHIRT_OPTIONS = ['B', 'R', 'G', 'P', 'C', 'O', 'Y'];
+export const HAIR_OPTIONS  = ['h', 'H', 'Y', 'K'];          // brown / dark / blond / black
+export const STYLE_OPTIONS = ['default', 'pony', 'bun', 'short'];
+
+export const SHIRT_HEX = { B: '#3a5fb0', R: '#ef5b5b', G: '#4caf50', P: '#a05bcf', C: '#4ad6ff', O: '#ff8a3a', Y: '#ffd54a' };
+export const HAIR_HEX  = { h: '#a06030', H: '#3a2820', Y: '#ffd54a', K: '#0a0c1e' };
+
+export const DEFAULT_VARIANTS = [
   { shirt: 'B', hair: 'h', kind: 'student', style: 'default', glasses: false },
   { shirt: 'R', hair: 'Y', kind: 'student', style: 'pony',    glasses: false },
   { shirt: 'G', hair: 'H', kind: 'student', style: 'bun',     glasses: false },
@@ -19,8 +26,20 @@ const VARIANTS = [
   { shirt: 'O', hair: 'Y', kind: 'teacher', style: 'bun',     glasses: false }
 ];
 
+export function makeVariant({ shirt = 'B', hair = 'h', style = 'default', glasses = false, kind = 'student' } = {}) {
+  return {
+    shirt: SHIRT_OPTIONS.includes(shirt) ? shirt : 'B',
+    hair: HAIR_OPTIONS.includes(hair) ? hair : 'h',
+    style: STYLE_OPTIONS.includes(style) ? style : 'default',
+    glasses: !!glasses,
+    kind
+  };
+}
+
 export function makeCharacter(opts) {
-  const variant = VARIANTS[opts.variantIndex % VARIANTS.length];
+  const variant = opts.variant
+    ? makeVariant(opts.variant)
+    : DEFAULT_VARIANTS[opts.variantIndex % DEFAULT_VARIANTS.length];
   return {
     id: opts.id,
     name: opts.name,
@@ -168,6 +187,16 @@ function drawCharOverlays(ctx, ch, sx, sy, flip, frame) {
     // Bridge
     ctx.fillRect(sx + 6, eyeRowY + 1, 1, 1);
   }
+}
+
+// Renders a standing character sprite plus its style overlays at (x, y) on the
+// given context. Used by the character-customizer UI; doesn't need a full
+// character state.
+export function drawCharacterPreview(ctx, variant, x, y) {
+  const v = makeVariant(variant || {});
+  const sp = getCharSprite('stand', v, 0);
+  ctx.drawImage(sp, x, y);
+  drawCharOverlays(ctx, { variant: v, state: 'stand' }, x, y, false, 0);
 }
 
 export function spawnPositions(count, terrain) {
