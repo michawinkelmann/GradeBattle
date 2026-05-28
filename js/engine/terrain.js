@@ -5,7 +5,8 @@ export const WORLD_H = 600;
 
 const THEMES = {
   schulhof: {
-    sky: ['#7ecbff', '#aee8ff'],
+    // Top -> horizon glow -> low haze.
+    sky: ['#5fa6e6', '#a8d8ff', '#dcefff'],
     ground: '#7a5a3a',
     grass: '#4caf50',
     rock: '#6b4a2a',
@@ -13,7 +14,8 @@ const THEMES = {
     surface: 'grass'
   },
   klassenraum: {
-    sky: ['#d8c298', '#f0dca8'],
+    // Warm classroom wall light, top is darker, near floor lighter.
+    sky: ['#b89570', '#d8c298', '#f0dca8'],
     ground: '#8a6a3a',
     grass: '#a0764a',
     rock: '#4a3320',
@@ -23,7 +25,8 @@ const THEMES = {
     plankLight: '#a0764a'
   },
   turnhalle: {
-    sky: ['#c5d3e8', '#e8efff'],
+    // Cool fluorescent gym light fading to a brighter floor area.
+    sky: ['#a4b5d0', '#c5d3e8', '#e8efff'],
     ground: '#c9974c',
     grass: '#dba867',
     rock: '#705536',
@@ -93,6 +96,15 @@ export function createTerrain(seed, themeName = 'schulhof') {
     // Thin dark seams between planks (only inside the clipped ground).
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     for (let x = plankW; x < w; x += plankW) ctx.fillRect(x - 1, 0, 1, h);
+    // Wood knots and grain — small randomized blobs for character.
+    for (let i = 0; i < 80; i++) {
+      const x = (rng.range(0, w)) | 0;
+      const y = (rng.range(0, h)) | 0;
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 2 + rng.range(0, 2), 1, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
     // Top edge highlight along the silhouette.
     ctx.strokeStyle = theme.grass;
@@ -113,6 +125,20 @@ export function createTerrain(seed, themeName = 'schulhof') {
       else ctx.lineTo(x, heights[x]);
     }
     ctx.stroke();
+    // Grass blades: short vertical strokes every few px along the ridge.
+    ctx.fillStyle = theme.grass;
+    for (let x = 4; x < w; x += 3) {
+      const y = heights[x];
+      const blade = 2 + ((x * 1373) & 1);          // pseudo-random per column
+      ctx.fillRect(x, y - blade, 1, blade);
+    }
+    // Pebbles / soil flecks inside the dirt for texture.
+    for (let i = 0; i < 220; i++) {
+      const x = (rng.range(0, w)) | 0;
+      const baseY = heights[x] + 6 + rng.range(0, h - heights[x] - 10);
+      ctx.fillStyle = i % 3 === 0 ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.18)';
+      ctx.fillRect(x, baseY | 0, 1, 1);
+    }
   }
 
   // Floating platforms (1-3).
@@ -125,6 +151,15 @@ export function createTerrain(seed, themeName = 'schulhof') {
     ctx.fillRect(px, py, pw, 12);
     ctx.fillStyle = theme.surface === 'planks' ? theme.plankLight : theme.grass;
     ctx.fillRect(px, py, pw, 3);
+  }
+
+  // Theme-specific map features (solid + decorative).
+  if (themeName === 'schulhof') {
+    addOutdoorFeatures(ctx, rng, w, base, heights, theme);
+  } else if (themeName === 'klassenraum') {
+    addClassroomFeatures(ctx, rng, w, heights, theme);
+  } else if (themeName === 'turnhalle') {
+    addGymFeatures(ctx, rng, w, heights, theme);
   }
 
   // Build a 1-byte-per-pixel solid mask up front. This is what isSolid() reads on every
@@ -254,4 +289,170 @@ export function surfaceY(terrain, x) {
   if (x < 0 || x >= terrain.width) return terrain.height;
   // Use cached heights for speed.
   return terrain.heights[x | 0];
+}
+
+// ===== Theme features =====
+// All features paint *only* on the canvas; the solid mask is built
+// after these run in createTerrain, so anything that should be walkable
+// just needs to have non-transparent pixels at the right height.
+
+// Pick non-overlapping x positions inside [margin, w-margin].
+function spreadPositions(rng, w, count, margin, minGap) {
+  const out = [];
+  let tries = 0;
+  while (out.length < count && tries < count * 30) {
+    tries++;
+    const x = rng.range(margin, w - margin) | 0;
+    if (out.every(p => Math.abs(p - x) > minGap)) out.push(x);
+  }
+  return out;
+}
+
+function addOutdoorFeatures(ctx, rng, w, base, heights, theme) {
+  // 3-5 trees scattered along the ground.
+  const treeCount = rng.int(3, 5);
+  const positions = spreadPositions(rng, w, treeCount, 80, 90);
+  for (const tx of positions) {
+    const gy = heights[tx];
+    drawTree(ctx, tx, gy, rng);
+  }
+  // 60% chance: jungle gym (climbable frame) somewhere mid-map.
+  if (rng.next() < 0.6) {
+    const gx = rng.range(w * 0.25, w * 0.75) | 0;
+    const gy = heights[gx];
+    drawJungleGym(ctx, gx, gy, theme);
+  }
+}
+
+function drawTree(ctx, x, gy, rng) {
+  // Trunk
+  ctx.fillStyle = '#5a3a20';
+  ctx.fillRect(x - 2, gy - 22, 4, 22);
+  // Canopy: three overlapping circles, slightly randomized.
+  const r = rng.int(11, 15);
+  ctx.fillStyle = '#2f7a33';
+  ctx.beginPath();
+  ctx.arc(x, gy - 28, r, 0, Math.PI * 2);
+  ctx.arc(x - 6, gy - 22, r - 3, 0, Math.PI * 2);
+  ctx.arc(x + 6, gy - 22, r - 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Lighter highlight on top.
+  ctx.fillStyle = '#4caf50';
+  ctx.beginPath();
+  ctx.arc(x - 2, gy - 32, r - 5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawJungleGym(ctx, x, gy, theme) {
+  // Two vertical bars + three horizontal rungs.
+  ctx.strokeStyle = '#7a5a3a';
+  ctx.lineWidth = 3;
+  const top = gy - 38;
+  ctx.beginPath();
+  ctx.moveTo(x - 16, gy);     ctx.lineTo(x - 16, top);
+  ctx.moveTo(x + 16, gy);     ctx.lineTo(x + 16, top);
+  ctx.moveTo(x - 16, top);    ctx.lineTo(x + 16, top);
+  ctx.moveTo(x - 16, top + 12); ctx.lineTo(x + 16, top + 12);
+  ctx.moveTo(x - 16, top + 24); ctx.lineTo(x + 16, top + 24);
+  ctx.stroke();
+}
+
+function addClassroomFeatures(ctx, rng, w, heights, theme) {
+  // 2-4 desks on the floor surface.
+  const count = rng.int(2, 4);
+  const positions = spreadPositions(rng, w, count, 120, 140);
+  for (const cx of positions) {
+    const gy = heights[cx];
+    drawDesk(ctx, cx, gy);
+  }
+  // A chalkboard mid-map (decorative wall element high up).
+  const bx = (w / 2) | 0;
+  drawWallChalkboard(ctx, bx, 60);
+}
+
+function drawDesk(ctx, x, gy) {
+  // Desk top: solid platform, brown.
+  ctx.fillStyle = '#7a5a3a';
+  ctx.fillRect(x - 22, gy - 18, 44, 4);
+  // Side rails + legs.
+  ctx.fillStyle = '#5a3a20';
+  ctx.fillRect(x - 22, gy - 14, 4, 14);
+  ctx.fillRect(x + 18, gy - 14, 4, 14);
+  // Chair behind the desk (decorative, slightly to the right).
+  ctx.fillStyle = '#a06030';
+  ctx.fillRect(x + 26, gy - 12, 12, 3);
+  ctx.fillStyle = '#7a5a3a';
+  ctx.fillRect(x + 26, gy - 22, 3, 10);
+  ctx.fillRect(x + 26, gy - 12, 3, 12);
+  ctx.fillRect(x + 35, gy - 12, 3, 12);
+}
+
+function drawWallChalkboard(ctx, x, y) {
+  // Dark green board with light frame, decorative only.
+  ctx.fillStyle = '#5e441f';
+  ctx.fillRect(x - 50, y - 4, 100, 4);     // top frame
+  ctx.fillRect(x - 50, y + 36, 100, 4);    // bottom frame
+  ctx.fillRect(x - 50, y, 4, 36);          // left frame
+  ctx.fillRect(x + 46, y, 4, 36);          // right frame
+  ctx.fillStyle = '#2f7a33';
+  ctx.fillRect(x - 46, y, 92, 36);
+  // Chalk text streaks.
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.fillRect(x - 38, y + 6, 24, 1);
+  ctx.fillRect(x - 38, y + 12, 36, 1);
+  ctx.fillRect(x - 38, y + 18, 28, 1);
+  ctx.fillRect(x - 38, y + 24, 32, 1);
+  ctx.fillRect(x - 38, y + 30, 20, 1);
+}
+
+function addGymFeatures(ctx, rng, w, heights, theme) {
+  // Vaulting box on the floor.
+  const vx = rng.range(w * 0.2, w * 0.45) | 0;
+  drawVaultBox(ctx, vx, heights[vx], theme);
+  // Pommel-horse / "Bock" further right.
+  const hx = rng.range(w * 0.55, w * 0.85) | 0;
+  drawPommelHorse(ctx, hx, heights[hx], theme);
+  // Wall-mounted high-bar (decorative, between).
+  const bx = (w / 2) | 0;
+  drawHighBar(ctx, bx, 90, theme);
+}
+
+function drawVaultBox(ctx, x, gy, theme) {
+  // Layered tiers like a real vaulting box.
+  const layers = [
+    { w: 30, h: 8, color: '#8a6630' },
+    { w: 36, h: 8, color: '#a07b3a' },
+    { w: 42, h: 8, color: '#c9974c' }
+  ];
+  let yOff = 0;
+  for (const l of layers) {
+    yOff += l.h;
+    ctx.fillStyle = l.color;
+    ctx.fillRect(x - l.w / 2, gy - yOff, l.w, l.h);
+    // Thin top highlight.
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.fillRect(x - l.w / 2, gy - yOff, l.w, 1);
+  }
+}
+
+function drawPommelHorse(ctx, x, gy, theme) {
+  // Body
+  ctx.fillStyle = '#8a6630';
+  ctx.fillRect(x - 22, gy - 18, 44, 8);
+  ctx.fillStyle = '#705536';
+  // Legs
+  ctx.fillRect(x - 18, gy - 10, 3, 10);
+  ctx.fillRect(x + 15, gy - 10, 3, 10);
+  // Two handles (Pommels).
+  ctx.fillStyle = '#d8d8d8';
+  ctx.fillRect(x - 12, gy - 24, 4, 6);
+  ctx.fillRect(x + 8, gy - 24, 4, 6);
+}
+
+function drawHighBar(ctx, x, y, theme) {
+  ctx.fillStyle = '#705536';
+  ctx.fillRect(x - 30, y, 60, 2);
+  // Side supports
+  ctx.fillRect(x - 30, y, 2, 14);
+  ctx.fillRect(x + 28, y, 2, 14);
 }
