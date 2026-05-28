@@ -23,7 +23,10 @@ const PALETTE = {
   c: '#2a8aa8',
   Z: '#b8941f',  // dark yellow
   N: '#7a5a3a',  // brown
-  n: '#4e3722'
+  n: '#4e3722',
+  // Far-parallax palette: muted, low-saturation versions used by getFarBackdrop().
+  // Capital = a touch lighter, lowercase = the silhouette body.
+  Q: '#4d5a78', q: '#3a4566'  // distant blue-grey
 };
 
 const cache = new Map();
@@ -942,6 +945,68 @@ export function getBackdrop(theme) {
         for (let x = 0; x < w; x++) {
           if ((x === 25 || x === 50 || x === 75 || x === 100) && y < 28) r += 'n';
           else if ((y === 5 || y === 12 || y === 19 || y === 26) && x > 22 && x < 103) r += 'n';
+          else r += '_';
+        }
+        rows.push(r);
+      }
+    }
+    return rows;
+  });
+}
+
+// Far parallax layer – paler, smaller silhouettes for sense of depth.
+export function getFarBackdrop(theme) {
+  return rasterize(`far_backdrop_${theme.backdrop}`, () => {
+    const w = 160, h = 24;
+    const rows = [];
+    if (theme.backdrop === 'building') {
+      // Distant city skyline + faint hills.
+      const roof = new Int8Array(w);
+      for (let x = 0; x < w; x++) {
+        const hilly = h - 4 + Math.round(Math.sin(x * 0.2) * 2 + Math.sin(x * 0.07) * 3);
+        const skyline =
+          (x > 18 && x < 30) ? 10 :
+          (x > 35 && x < 50) ? 6 :
+          (x > 55 && x < 64) ? 14 :
+          (x > 70 && x < 92) ? 4 :
+          (x > 95 && x < 108) ? 9 :
+          (x > 112 && x < 124) ? 16 :
+          (x > 130 && x < 148) ? 11 :
+          h;
+        roof[x] = Math.min(hilly, skyline);
+      }
+      for (let y = 0; y < h; y++) {
+        let r = '';
+        for (let x = 0; x < w; x++) {
+          if (y < roof[x]) r += '_';
+          else if (y < roof[x] + 1) r += 'Q'; // top outline (a touch lighter)
+          else r += 'q'; // distant silhouette body
+        }
+        rows.push(r);
+      }
+    } else if (theme.backdrop === 'blackboard') {
+      // Pale row of pinned-up student posters / notice board.
+      for (let y = 0; y < h; y++) {
+        let r = '';
+        for (let x = 0; x < w; x++) {
+          const block = Math.floor(x / 22);
+          const inBlock = (x % 22 > 1 && x % 22 < 18);
+          if (y > 4 && y < 20 && inBlock) {
+            // Alternating pastel paper colors.
+            const colors = ['c', 'O', 'C', 'g', 'p'];
+            r += colors[block % colors.length];
+          } else r += '_';
+        }
+        rows.push(r);
+      }
+    } else {
+      // Distant gym wall: faint windows.
+      for (let y = 0; y < h; y++) {
+        let r = '';
+        for (let x = 0; x < w; x++) {
+          const wn = Math.floor(x / 24);
+          const inW = (x % 24 > 4 && x % 24 < 20) && y > 4 && y < 18;
+          if (inW) r += (wn + Math.floor(y / 4)) % 2 === 0 ? 'C' : 'c';
           else r += '_';
         }
         rows.push(r);
