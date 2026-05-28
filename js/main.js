@@ -10,8 +10,8 @@ import { setupMenu, showScreen, setLobbyCode, setLobbyPlayers, showEndScreen } f
 import { createControls, getActiveWeapon } from './ui/controls.js';
 import { bindTutorialControls, showTutorial, hasSeenTutorial } from './ui/tutorial.js';
 import { bindSettingsControls, setOnMuteChanged } from './ui/settings.js';
-import { isStaticCamera } from './ui/prefs.js';
-import { drawScene } from './render/scene.js';
+import { isConfirmFire, setConfirmFire } from './ui/prefs.js';
+import { drawScene, drawMinimap } from './render/scene.js';
 import { WEAPONS } from './game/weapons.js';
 import { planBotTurn, executeBotPlan } from './ai/bot.js';
 import { playSound, setMuted, isMuted } from './game/sound.js';
@@ -58,6 +58,25 @@ async function boot() {
   setOnMuteChanged(syncMuteButton);
 
   App.hud.btnPause.addEventListener('click', togglePause);
+
+  // HUD toggle: mini-map.
+  const mapBtn = document.getElementById('hud-minimap-toggle');
+  const minimapEl = document.getElementById('hud-minimap');
+  const MM_KEY = 'gradebattle.minimapOn';
+  function setMinimap(v) {
+    minimapEl?.classList.toggle('hidden', !v);
+    mapBtn?.classList.toggle('on', v);
+    localStorage.setItem(MM_KEY, v ? '1' : '0');
+  }
+  // Default: mini-map ON so newcomers see the overview immediately.
+  setMinimap(localStorage.getItem(MM_KEY) !== '0');
+  mapBtn?.addEventListener('click', () => setMinimap(minimapEl?.classList.contains('hidden')));
+
+  // HUD toggle: confirm-fire.
+  const cfBtn = document.getElementById('hud-confirm-toggle');
+  function setCfBtn() { cfBtn?.classList.toggle('on', isConfirmFire()); }
+  setCfBtn();
+  cfBtn?.addEventListener('click', () => { setConfirmFire(!isConfirmFire()); setCfBtn(); });
   App.hud.btnWeapons.addEventListener('click', () => {
     if (!App.state) return;
     if (!isLocalActivePlayer()) return;
@@ -213,7 +232,6 @@ function tick(dt) {
   // Client: drives only the camera + simple animations; world simulation comes via snapshots.
   if (App.state.config.mode === 'client') {
     // smooth interpolation: nothing to do; just camera follow.
-    App.state.camera.staticMode = isStaticCamera();
     const cur = activePlayer(App.state);
     if (cur) updateCamera(App.state.camera, cur.x, cur.y - 30, App.state.terrain.width, App.state.terrain.height, dt);
     return;
@@ -282,7 +300,6 @@ function tick(dt) {
   } else if (me) {
     camTarget = { x: me.x, y: me.y - 30 };
   }
-  App.state.camera.staticMode = isStaticCamera();
   if (camTarget) updateCamera(App.state.camera, camTarget.x, camTarget.y, App.state.terrain.width, App.state.terrain.height, dt);
 
   // Host broadcasts snapshot.
@@ -348,6 +365,7 @@ function render() {
   if (!App.state) return;
   drawScene(App.ctx, App.state, App.controls);
   renderHud(App.hud, App.state);
+  drawMinimap(App.state);
 }
 
 function togglePause(force) {

@@ -15,16 +15,12 @@ function refreshFromState() {
   const volVal = document.getElementById('setting-volume-val');
   const muteEl = document.getElementById('setting-mute');
   const rmEl = document.getElementById('setting-reduced-motion');
-  const scEl = document.getElementById('setting-static-camera');
-  const cfEl = document.getElementById('setting-confirm-fire');
   if (!volEl) return;
   const v = Math.round(getVolume() * 100);
   volEl.value = String(v);
   volVal.textContent = v + '%';
   muteEl.checked = isMuted();
   rmEl.checked = getBool('reducedMotion', false);
-  if (scEl) scEl.checked = getBool('staticCamera', false);
-  if (cfEl) cfEl.checked = getBool('confirmFire', false);
 }
 
 export function bindSettingsControls() {
@@ -48,11 +44,6 @@ export function bindSettingsControls() {
   });
 
   rmEl.addEventListener('change', () => setBool('reducedMotion', rmEl.checked));
-
-  const scEl = document.getElementById('setting-static-camera');
-  const cfEl = document.getElementById('setting-confirm-fire');
-  if (scEl) scEl.addEventListener('change', () => setBool('staticCamera', scEl.checked));
-  if (cfEl) cfEl.addEventListener('change', () => setBool('confirmFire', cfEl.checked));
 
   document.querySelectorAll('#screen-settings [data-action]').forEach(btn => {
     btn.addEventListener('click', () => {

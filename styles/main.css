@@ -355,6 +355,29 @@ body:has(#touch-controls:not(.hidden)) #hud-current {
   margin-bottom: 80px;
 }
 
+/* Mini-map overlay centred under the wind/timer card. */
+#hud-minimap {
+  position: absolute;
+  top: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 75px;
+  image-rendering: pixelated;
+  border: 2px solid var(--border);
+  background: #0a0c1e;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  z-index: 4;
+}
+#hud-minimap.hidden { display: none; }
+@media (max-width: 600px) {
+  #hud-minimap { top: 84px; width: 180px; height: 56px; }
+}
+
+/* HUD toggle buttons that can show an "active" state via .on. */
+.hud-btn.on { background: var(--accent); color: var(--bg); border-color: #b8941f; }
+
 /* Fire-confirm box: shows after drag-release when "Wurf bestätigen" is on. */
 #fire-confirm {
   position: absolute;

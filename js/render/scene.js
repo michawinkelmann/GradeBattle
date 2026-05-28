@@ -7,6 +7,74 @@ import { getBackdrop, getFarBackdrop } from './sprites.js';
 import { previewTrajectory } from '../engine/physics.js';
 import { isAimable, isPlaceable } from '../game/weapons.js';
 import { isReducedMotion } from '../ui/prefs.js';
+import { SHIRT_HEX } from '../game/characters.js';
+
+// Tiny world-overview shown as an HTML canvas in the HUD. Each call re-draws
+// the terrain silhouette (cheap, sampled from the heights array) and overlays
+// the players + projectiles as coloured dots.
+let _lastMinimap = 0;
+export function drawMinimap(state) {
+  const el = document.getElementById('hud-minimap');
+  if (!el || el.classList.contains('hidden')) return;
+  // Throttle to ~12 fps; the minimap doesn't need 60 Hz fidelity.
+  const now = performance.now();
+  if (now - _lastMinimap < 80) return;
+  _lastMinimap = now;
+  const ctx = el.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const w = el.width, h = el.height;
+  const { terrain, camera, players, world } = state;
+  const sx = w / terrain.width;
+  const sy = h / terrain.height;
+
+  // Sky background
+  ctx.fillStyle = '#0a0c1e';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = 'rgba(126,203,255,0.35)';
+  ctx.fillRect(0, 0, w, h);
+
+  // Terrain silhouette from cached heights[] (cheap, no readback).
+  ctx.fillStyle = terrain.theme.ground;
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  for (let x = 0; x < terrain.width; x += 6) {
+    ctx.lineTo(x * sx, terrain.heights[x] * sy);
+  }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // Camera viewport rectangle
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(camera.x * sx, camera.y * sy, camera.w * sx, camera.h * sy);
+
+  // Projectiles as tiny white dots.
+  ctx.fillStyle = '#f1f1f1';
+  for (const p of world.projectiles) {
+    ctx.fillRect(Math.round(p.x * sx) - 1, Math.round(p.y * sy) - 1, 2, 2);
+  }
+  // Lingerings as semi-transparent yellow blobs.
+  for (const l of world.lingerings) {
+    ctx.fillStyle = 'rgba(201,151,76,0.5)';
+    ctx.beginPath();
+    ctx.arc(l.x * sx, l.y * sy, Math.max(2, l.radius * sx), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Players as their shirt-coloured dots, active player highlighted yellow.
+  for (const p of players) {
+    if (p.outOfWorld) continue;
+    const color = p.outOfGame ? '#4f568a' : (SHIRT_HEX[p.variant.shirt] || '#f1f1f1');
+    ctx.fillStyle = color;
+    const px = Math.round(p.x * sx), py = Math.round(p.y * sy);
+    ctx.fillRect(px - 2, py - 3, 4, 4);
+    if (p.id === state.activeIdx) {
+      ctx.strokeStyle = '#ffd54a';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px - 3, py - 4, 6, 6);
+    }
+  }
+}
 
 // Procedural cloud field — fixed positions, drift via offset using wind & camera.
 const CLOUDS = [

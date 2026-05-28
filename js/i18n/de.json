@@ -70,6 +70,8 @@
   "hud.weapons": "Waffen",
   "hud.pause": "II",
   "hud.turn": "Zug",
+  "hud.minimap": "Mini-Karte (Übersicht)",
+  "hud.confirmFire": "Wurf bestätigen",
   "pause.title": "Pause",
   "pause.resume": "Weiter",
   "pause.quit": "Spiel beenden",

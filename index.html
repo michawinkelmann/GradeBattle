@@ -122,6 +122,8 @@
             <div id="hud-timer">30</div>
           </div>
           <div id="hud-right">
+            <button class="hud-btn" id="hud-minimap-toggle" data-i18n-title="hud.minimap" title="Mini-Karte">🗺</button>
+            <button class="hud-btn" id="hud-confirm-toggle" data-i18n-title="hud.confirmFire" title="Wurf bestätigen">✓</button>
             <button class="hud-btn" id="hud-mute" title="Mute">🔊</button>
             <button class="hud-btn" id="hud-pause" data-i18n="hud.pause">II</button>
           </div>
@@ -133,6 +135,7 @@
           </div>
           <button class="hud-btn" id="btn-weapons" data-i18n="hud.weapons">Waffen</button>
         </div>
+        <canvas id="hud-minimap" class="hidden" width="240" height="75"></canvas>
         <div id="bot-thinking" class="hidden"><span data-i18n="msg.botThinking">Bot überlegt…</span></div>
         <div id="fire-confirm" class="hidden">
           <button class="btn primary" data-action="fire-confirm" data-i18n="ui.fire">Werfen</button>
@@ -178,14 +181,6 @@
         <label class="checkbox">
           <input type="checkbox" id="setting-reduced-motion" />
           <span data-i18n="settings.reducedMotion">Animationen reduzieren</span>
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" id="setting-static-camera" />
-          <span data-i18n="settings.staticCamera">Übersichts-Kamera (ganze Karte sichtbar)</span>
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" id="setting-confirm-fire" />
-          <span data-i18n="settings.confirmFire">Wurf bestätigen</span>
         </label>
         <p class="settings-hint" data-i18n="settings.hotkeyHint">Tastatur im Spiel: Esc = Pause, Tab = Waffen, Q/E = Waffe wechseln, ↑/W/Leertaste = Springen.</p>
       </div>

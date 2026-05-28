@@ -71,6 +71,8 @@
   "hud.weapons": "Зброя",
   "hud.pause": "II",
   "hud.turn": "Хід",
+  "hud.minimap": "Міні-карта (огляд)",
+  "hud.confirmFire": "Підтвердити кидок",
   "pause.title": "Пауза",
   "pause.resume": "Продовжити",
   "pause.quit": "Завершити матч",
