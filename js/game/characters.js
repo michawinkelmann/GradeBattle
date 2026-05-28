@@ -7,14 +7,16 @@ export const WALK_SPEED = 50;       // px/s
 export const JUMP_VY = -180;
 export const MOVE_BUDGET = 200;     // px per turn
 
-// Shirt/hair color combos for visual differentiation.
+// Shirt/hair color combos + style modifiers for visual differentiation.
+// style: 'default' | 'pony' (ponytail) | 'bun' | 'short'
+// glasses: bool — small frames over the eyes
 const VARIANTS = [
-  { shirt: 'B', hair: 'h', kind: 'student' },
-  { shirt: 'R', hair: 'Y', kind: 'student' },
-  { shirt: 'G', hair: 'H', kind: 'student' },
-  { shirt: 'P', hair: 'h', kind: 'student' },
-  { shirt: 'C', hair: 'H', kind: 'teacher' },
-  { shirt: 'O', hair: 'Y', kind: 'teacher' }
+  { shirt: 'B', hair: 'h', kind: 'student', style: 'default', glasses: false },
+  { shirt: 'R', hair: 'Y', kind: 'student', style: 'pony',    glasses: false },
+  { shirt: 'G', hair: 'H', kind: 'student', style: 'bun',     glasses: false },
+  { shirt: 'P', hair: 'h', kind: 'student', style: 'short',   glasses: true  },
+  { shirt: 'C', hair: 'H', kind: 'teacher', style: 'default', glasses: true  },
+  { shirt: 'O', hair: 'Y', kind: 'teacher', style: 'bun',     glasses: false }
 ];
 
 export function makeCharacter(opts) {
@@ -79,6 +81,13 @@ export function drawCharacter(ctx, ch) {
     ctx.drawImage(sp, sx, sy);
   }
 
+  // Style overlays: hair extras + glasses. Drawn in unflipped screen space,
+  // anchored to the sprite's head region. The "frame" param lets us track tilt
+  // (currently only used for the ponytail bobbing as the character walks).
+  if (!ch.outOfGame) {
+    drawCharOverlays(ctx, ch, sx, sy, flip, frame);
+  }
+
   // Name + grade bar above head.
   if (!ch.outOfGame) {
     const bw = 16, bh = 2;
@@ -90,6 +99,74 @@ export function drawCharacter(ctx, ch) {
     const col = `rgb(${Math.round(110 + (1 - t) * 145)},${Math.round(80 + t * 140)},${Math.round(80)})`;
     ctx.fillStyle = col;
     ctx.fillRect(bx, by, Math.round(bw * t), bh);
+  }
+}
+
+// Resolve a palette key letter (H/h/Y/Z) to the actual hex color used by sprites.js.
+// Used so the head overlays match the chosen hair color.
+const HAIR_COLORS = {
+  H: '#3a2820', h: '#a06030', Y: '#ffd54a', Z: '#b8941f', K: '#0a0c1e'
+};
+
+function drawCharOverlays(ctx, ch, sx, sy, flip, frame) {
+  const v = ch.variant || {};
+  const hairColor = HAIR_COLORS[v.hair] || HAIR_COLORS.h;
+  const headTop = sy;                 // top of the 18-tall sprite
+  const headCenterX = sx + 6;         // sprite is 12 wide, head sits at columns 2..9
+  const eyeRowY = headTop + 3;        // see charStand: row 3 is the eye row
+
+  // Hair style modifier.
+  switch (v.style) {
+    case 'pony': {
+      // Ponytail trailing BEHIND the head. facing>0 means the char looks right,
+      // so 'behind' is on the left side (sx + 1).
+      const bob = ch.state === 'walk' && (frame % 2 === 1) ? 1 : 0;
+      const behindX = flip ? sx + 10 : sx + 1;
+      const trailDir = flip ? 1 : -1;       // extends further behind the head
+      ctx.fillStyle = hairColor;
+      // Base of ponytail
+      ctx.fillRect(behindX, headTop + 2 + bob, 1, 5);
+      // Trailing strand a pixel further out
+      ctx.fillRect(behindX + trailDir, headTop + 3 + bob, 1, 4);
+      ctx.fillRect(behindX + trailDir * 2, headTop + 5 + bob, 1, 2);
+      break;
+    }
+    case 'bun': {
+      // Round bun on top — three rows, visibly above the head silhouette.
+      ctx.fillStyle = hairColor;
+      ctx.fillRect(headCenterX - 1, headTop - 3, 3, 1);
+      ctx.fillRect(headCenterX - 2, headTop - 2, 5, 1);
+      ctx.fillRect(headCenterX - 2, headTop - 1, 5, 1);
+      // Tiny dark highlight on the front.
+      ctx.fillStyle = '#0a0c1e';
+      ctx.fillRect(headCenterX, headTop - 2, 1, 1);
+      break;
+    }
+    case 'short': {
+      // Shorter sides — overpaint the bottom of the existing hair with skin tone.
+      ctx.fillStyle = '#f5d6a8';
+      ctx.fillRect(sx + 1, headTop + 1, 2, 1);
+      ctx.fillRect(sx + 9, headTop + 1, 2, 1);
+      break;
+    }
+    // 'default': no-op
+  }
+
+  // Glasses: two square lenses connected by a bridge, drawn over the eye row.
+  if (v.glasses) {
+    ctx.fillStyle = '#0a0c1e';
+    // Left lens frame
+    ctx.fillRect(sx + 3, eyeRowY, 3, 1);     // top
+    ctx.fillRect(sx + 3, eyeRowY + 1, 1, 1); // left
+    ctx.fillRect(sx + 5, eyeRowY + 1, 1, 1); // right
+    ctx.fillRect(sx + 3, eyeRowY + 2, 3, 1); // bottom
+    // Right lens frame
+    ctx.fillRect(sx + 7, eyeRowY, 3, 1);
+    ctx.fillRect(sx + 7, eyeRowY + 1, 1, 1);
+    ctx.fillRect(sx + 9, eyeRowY + 1, 1, 1);
+    ctx.fillRect(sx + 7, eyeRowY + 2, 3, 1);
+    // Bridge
+    ctx.fillRect(sx + 6, eyeRowY + 1, 1, 1);
   }
 }
 

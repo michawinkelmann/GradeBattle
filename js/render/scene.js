@@ -3,7 +3,7 @@ import { drawCharacter } from '../game/characters.js';
 import { drawWorld } from '../game/effects.js';
 import { activePlayer } from '../game/state.js';
 import { getActiveWeapon } from '../ui/controls.js';
-import { getBackdrop } from './sprites.js';
+import { getBackdrop, getFarBackdrop } from './sprites.js';
 import { previewTrajectory } from '../engine/physics.js';
 import { isAimable, isPlaceable } from '../game/weapons.js';
 
@@ -105,13 +105,23 @@ export function drawScene(ctx, state, input) {
   // Number of streaks scales with |wind|; speed too. At wind 0 nothing renders.
   drawWindStreaks(ctx, state.wind);
 
-  // Parallax backdrop (subtle far layer).
-  const backdrop = getBackdrop(terrain.theme);
+  // Parallax: far layer (very slow drift) drawn behind, near layer drawn in front.
   const baseLine = terrain.height * 0.5;
+  const far = getFarBackdrop(terrain.theme);
+  const farX = -camera.x * 0.12;
+  const farY = baseLine - camera.y - far.height + 26;
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  for (let x = (farX % far.width) - far.width; x < VIEW_W; x += far.width) {
+    ctx.drawImage(far, Math.round(x), Math.round(farY));
+  }
+  ctx.restore();
+
+  const backdrop = getBackdrop(terrain.theme);
   const parX = -camera.x * 0.3;
   const parY = baseLine - camera.y - backdrop.height + 12;
   ctx.save();
-  ctx.globalAlpha = 0.35;
+  ctx.globalAlpha = 0.45;
   for (let x = (parX % backdrop.width) - backdrop.width; x < VIEW_W; x += backdrop.width) {
     ctx.drawImage(backdrop, Math.round(x), Math.round(parY));
   }
