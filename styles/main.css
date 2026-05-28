@@ -115,15 +115,23 @@ html, body {
 #screen-game {
   padding: 0;
   background: #0a0c1e;
+  display: none;
+  align-items: center;
+  justify-content: center;
 }
+#screen-game.active { display: flex; }
 
 #game-canvas {
   width: 100%;
   height: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
+  aspect-ratio: 16 / 9;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   display: block;
   touch-action: none;
+  background: #0a0c1e;
 }
 
 #hud {
