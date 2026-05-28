@@ -22,6 +22,18 @@ const CLOUDS = [
   { x: 1780,y: 50,  w: 34, h: 10 }
 ];
 
+// Simple sRGB hex mixer used by the sky gradient horizon.
+function mixHex(a, b, t) {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ra = (pa >> 16) & 255, ga = (pa >> 8) & 255, ba = pa & 255;
+  const rb = (pb >> 16) & 255, gb = (pb >> 8) & 255, bb = pb & 255;
+  const r = Math.round(ra * (1 - t) + rb * t);
+  const g = Math.round(ga * (1 - t) + gb * t);
+  const bl = Math.round(ba * (1 - t) + bb * t);
+  return `rgb(${r},${g},${bl})`;
+}
+
 // Deterministic positions so streaks don't shimmer randomly each frame.
 const WIND_STREAKS = [];
 for (let i = 0; i < 24; i++) {
@@ -70,8 +82,17 @@ export function drawScene(ctx, state, input) {
   const { terrain, camera, players } = state;
   // Sky gradient
   const grad = ctx.createLinearGradient(0, 0, 0, VIEW_H);
-  grad.addColorStop(0, terrain.theme.sky[0]);
-  grad.addColorStop(1, terrain.theme.sky[1]);
+  const sky = terrain.theme.sky;
+  if (sky.length >= 3) {
+    grad.addColorStop(0, sky[0]);
+    grad.addColorStop(0.6, sky[1]);
+    grad.addColorStop(1, sky[2]);
+  } else {
+    // Synthesize a middle band so the sky has a horizon glow even with 2 stops.
+    grad.addColorStop(0, sky[0]);
+    grad.addColorStop(0.65, mixHex(sky[0], sky[1], 0.55));
+    grad.addColorStop(1, sky[1]);
+  }
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
