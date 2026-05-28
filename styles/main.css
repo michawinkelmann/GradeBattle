@@ -222,6 +222,19 @@ html, body {
   font-family: inherit;
   cursor: pointer;
   pointer-events: auto;
+  min-width: 36px;
+  min-height: 32px;
+}
+
+/* Bigger touch targets on coarse pointers (phones/tablets). */
+@media (pointer: coarse) {
+  .hud-btn { padding: 10px 14px; min-width: 56px; min-height: 48px; font-size: 1.05rem; }
+  #btn-weapons { padding: 14px 20px; font-size: 1.1rem; }
+  #hud-current { font-size: 0.9rem; padding: 8px 12px; }
+}
+
+#hud-bottom {
+  align-items: flex-end;
 }
 
 #hud-current {
@@ -231,29 +244,44 @@ html, body {
   display: flex;
   gap: 12px;
   pointer-events: auto;
+  max-width: 70vw;
+}
+
+/* When touch controls are at the bottom-left, push the current-player chip up. */
+body:has(#touch-controls:not(.hidden)) #hud-current {
+  margin-bottom: 80px;
 }
 
 #touch-controls {
   position: absolute;
-  bottom: 70px;
-  left: 10px;
+  bottom: 14px;
+  left: 14px;
   display: flex;
-  gap: 8px;
+  gap: 10px;
   pointer-events: auto;
 }
 
 #touch-controls.visible { display: flex; }
 
 .touch-btn {
-  width: 60px;
-  height: 60px;
-  background: rgba(10, 12, 30, 0.6);
+  width: 64px;
+  height: 64px;
+  background: rgba(10, 12, 30, 0.55);
   color: var(--fg);
   border: 2px solid var(--border);
-  font-size: 1.5rem;
+  border-radius: 8px;
+  font-size: 1.8rem;
   cursor: pointer;
   pointer-events: auto;
   font-family: inherit;
+  touch-action: none;
+}
+.touch-btn:active { background: rgba(255, 213, 74, 0.4); }
+
+/* On taller portrait screens / very small viewports: stack jump above and make a bit bigger. */
+@media (max-width: 640px) and (orientation: landscape), (max-height: 420px) {
+  .touch-btn { width: 56px; height: 56px; font-size: 1.5rem; }
+  #touch-controls { bottom: 10px; left: 10px; gap: 8px; }
 }
 
 #weapon-wheel {
@@ -261,9 +289,9 @@ html, body {
   inset: 0;
   background: rgba(10, 12, 30, 0.9);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 8px;
-  padding: 40px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  padding: 20px;
   pointer-events: auto;
   overflow-y: auto;
   align-content: start;
@@ -274,18 +302,25 @@ html, body {
 .weapon-item {
   background: var(--bg-2);
   border: 2px solid var(--border);
-  padding: 10px;
+  padding: 12px 10px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   text-align: center;
+  min-height: 100px;
 }
-
-.weapon-item.selected { outline: 2px solid var(--accent); }
+.weapon-item:active { background: #3a4072; }
+.weapon-item.selected { outline: 3px solid var(--accent); background: #3a4072; }
 .weapon-item canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+
+@media (pointer: coarse) {
+  #weapon-wheel { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); padding: 12px; gap: 8px; }
+  .weapon-item { font-size: 0.75rem; padding: 10px 4px; min-height: 86px; }
+  .weapon-item canvas { width: 40px; height: 40px; }
+}
 
 .hidden { display: none !important; }
 .visible { display: flex !important; }
@@ -347,7 +382,16 @@ html, body {
 @media (max-width: 600px) {
   .title h1 { font-size: 2rem; }
   .menu-buttons { min-width: 200px; }
-  #hud-players { min-width: 140px; font-size: 0.7rem; }
-  #hud-center { padding: 4px 8px; }
+  #hud-players { min-width: 130px; font-size: 0.7rem; padding: 6px; }
+  #hud-center { padding: 4px 8px; font-size: 0.85rem; }
   #hud-timer { font-size: 1.1rem; }
+}
+
+@media (max-height: 480px) and (pointer: coarse) {
+  #hud-top, #hud-bottom { padding: 6px; }
+  #hud-players { min-width: 120px; font-size: 0.7rem; padding: 4px 6px; }
+  .hud-player .grade-bar-bg { height: 5px; }
+  #hud-center { font-size: 0.8rem; padding: 4px 8px; }
+  #hud-timer { font-size: 1rem; }
+  body:has(#touch-controls:not(.hidden)) #hud-current { margin-bottom: 70px; }
 }

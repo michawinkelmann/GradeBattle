@@ -37,6 +37,22 @@ export function drawScene(ctx, state, input) {
   // Characters
   for (const p of players) drawCharacter(ctx, p);
 
+  // Active-player arrow hint (helps spot whose turn it is, esp. on small screens).
+  if (state.turnState === 'aim') {
+    const me = activePlayer(state);
+    if (me && !me.outOfGame && !me.outOfWorld) {
+      const ax = Math.round(me.x);
+      const ay = Math.round(me.y - me.h - 18 + Math.sin(performance.now() / 250) * 1.5);
+      ctx.fillStyle = '#ffd54a';
+      ctx.beginPath();
+      ctx.moveTo(ax, ay + 4);
+      ctx.lineTo(ax - 4, ay - 2);
+      ctx.lineTo(ax + 4, ay - 2);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
   // World effects (projectiles, mines, particles, lingerings)
   drawWorld(ctx, state);
 
@@ -51,18 +67,31 @@ export function drawScene(ctx, state, input) {
       const startX = me.x + Math.cos(input.aim.angle) * 12;
       const startY = me.y - me.h * 0.7 + Math.sin(input.aim.angle) * 12;
       const pts = previewTrajectory(startX, startY, vx, vy, state.wind, wp.windFactor || 0);
+      // Dotted trajectory (slightly bigger so it's readable on phones).
       ctx.fillStyle = 'rgba(255,213,74,0.85)';
       for (let i = 0; i < pts.length; i += 2) {
         ctx.fillRect(Math.round(pts[i].x) - 1, Math.round(pts[i].y) - 1, 2, 2);
       }
-      // Aim line + dot at character.
-      ctx.fillStyle = '#ffd54a';
-      ctx.fillRect(me.x - 1, me.y - me.h * 0.7 - 1, 2, 2);
+      // Slingshot line from char to drag point (mirrors finger position).
+      const dragX = me.x - Math.cos(input.aim.angle) * input.aim.power * 30;
+      const dragY = (me.y - me.h * 0.6) - Math.sin(input.aim.angle) * input.aim.power * 30;
+      ctx.strokeStyle = 'rgba(255,213,74,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(me.x, me.y - me.h * 0.6);
+      ctx.lineTo(dragX, dragY);
+      ctx.stroke();
+      // Power ring around char: green at low power, red at full.
+      const pw = input.aim.power;
+      const ringR = 6 + pw * 14;
+      const hue = Math.round((1 - pw) * 120);
+      ctx.strokeStyle = `hsla(${hue},85%,55%,0.9)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(me.x, me.y - me.h * 0.6, ringR, 0, Math.PI * 2);
+      ctx.stroke();
     }
   }
-
-  // Placement crosshair: when current weapon is placeable, show cursor at world coords if recent.
-  // (Implementation left to controls; we just hint at aim location.)
 
   resetTransform(ctx);
 }

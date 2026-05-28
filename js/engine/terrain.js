@@ -89,6 +89,15 @@ export function createTerrain(seed, themeName = 'schulhof') {
     ctx.fillRect(px, py, pw, 3);
   }
 
+  // Build a 1-byte-per-pixel solid mask up front. This is what isSolid() reads on every
+  // physics sub-step; we keep it in sync incrementally on every explode/addPlatform so
+  // we never have to re-read the canvas via getImageData (~36 ms at low-end mobile speeds).
+  const mask = new Uint8Array(w * h);
+  const img = ctx.getImageData(0, 0, w, h);
+  for (let i = 0, p = 3; i < mask.length; i++, p += 4) {
+    if (img.data[p] > 16) mask[i] = 1;
+  }
+
   const terrain = {
     canvas,
     ctx,
@@ -98,29 +107,16 @@ export function createTerrain(seed, themeName = 'schulhof') {
     themeName,
     theme,
     heights,
-    _imageData: null,
-    _dirty: true
+    mask
   };
   return terrain;
 }
 
-function ensureImageData(terrain) {
-  if (terrain._dirty || !terrain._imageData) {
-    terrain._imageData = terrain.ctx.getImageData(0, 0, terrain.width, terrain.height);
-    terrain._dirty = false;
-  }
-  return terrain._imageData;
-}
-
-export function markTerrainDirty(terrain) { terrain._dirty = true; }
-
-// Solid = alpha > 16.
+// Solid = mask byte === 1. Out-of-bounds = false.
 export function isSolid(terrain, x, y) {
   const xi = x | 0, yi = y | 0;
   if (xi < 0 || yi < 0 || xi >= terrain.width || yi >= terrain.height) return false;
-  const img = ensureImageData(terrain);
-  const i = (yi * terrain.width + xi) * 4 + 3;
-  return img.data[i] > 16;
+  return terrain.mask[yi * terrain.width + xi] === 1;
 }
 
 // Faster: read a rect once.
@@ -147,7 +143,7 @@ export function explodeAt(terrain, x, y, radius) {
   terrain.ctx.arc(x, y, radius, 0, Math.PI * 2);
   terrain.ctx.fill();
   terrain.ctx.restore();
-  markTerrainDirty(terrain);
+  carveMask(terrain, x, y, radius, 0);
 
   // Update height map roughly.
   const x0 = Math.max(0, (x - radius) | 0);
@@ -162,6 +158,40 @@ export function explodeAt(terrain, x, y, radius) {
   return true;
 }
 
+// Update the solid mask within a circle: value=0 clears, value=1 fills.
+function carveMask(terrain, cx, cy, radius, value) {
+  const w = terrain.width, h = terrain.height;
+  const x0 = Math.max(0, (cx - radius) | 0);
+  const x1 = Math.min(w - 1, (cx + radius) | 0);
+  const y0 = Math.max(0, (cy - radius) | 0);
+  const y1 = Math.min(h - 1, (cy + radius) | 0);
+  const r2 = radius * radius;
+  const mask = terrain.mask;
+  for (let y = y0; y <= y1; y++) {
+    const dy = y - cy;
+    const dy2 = dy * dy;
+    const rowOff = y * w;
+    for (let x = x0; x <= x1; x++) {
+      const dx = x - cx;
+      if (dx * dx + dy2 <= r2) mask[rowOff + x] = value;
+    }
+  }
+}
+
+function fillMaskRect(terrain, x, y, w, h, value) {
+  const tw = terrain.width;
+  const th = terrain.height;
+  const x0 = Math.max(0, x | 0);
+  const y0 = Math.max(0, y | 0);
+  const x1 = Math.min(tw, (x + w) | 0);
+  const y1 = Math.min(th, (y + h) | 0);
+  const mask = terrain.mask;
+  for (let yy = y0; yy < y1; yy++) {
+    const off = yy * tw;
+    for (let xx = x0; xx < x1; xx++) mask[off + xx] = value;
+  }
+}
+
 // Additive terrain - place a small solid platform (utility weapon).
 export function addPlatform(terrain, x, y, w, h, color) {
   terrain.ctx.save();
@@ -170,7 +200,7 @@ export function addPlatform(terrain, x, y, w, h, color) {
   terrain.ctx.fillStyle = terrain.theme.grass;
   terrain.ctx.fillRect(x | 0, y | 0, w | 0, 2);
   terrain.ctx.restore();
-  markTerrainDirty(terrain);
+  fillMaskRect(terrain, x, y, w, h, 1);
   // Update height where lower than top of platform.
   for (let xi = x | 0; xi < (x + w) | 0; xi++) {
     if (xi >= 0 && xi < terrain.width && terrain.heights[xi] > y) {
