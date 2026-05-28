@@ -134,6 +134,10 @@
           <button class="hud-btn" id="btn-weapons" data-i18n="hud.weapons">Waffen</button>
         </div>
         <div id="bot-thinking" class="hidden"><span data-i18n="msg.botThinking">Bot überlegt…</span></div>
+        <div id="fire-confirm" class="hidden">
+          <button class="btn primary" data-action="fire-confirm" data-i18n="ui.fire">Werfen</button>
+          <button class="btn" data-action="fire-cancel" data-i18n="ui.cancel">Abbrechen</button>
+        </div>
         <div id="touch-controls" class="hidden">
           <button class="touch-btn" data-touch="left">◀</button>
           <button class="touch-btn" data-touch="right">▶</button>
@@ -174,6 +178,14 @@
         <label class="checkbox">
           <input type="checkbox" id="setting-reduced-motion" />
           <span data-i18n="settings.reducedMotion">Animationen reduzieren</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="setting-static-camera" />
+          <span data-i18n="settings.staticCamera">Übersichts-Kamera (ganze Karte sichtbar)</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="setting-confirm-fire" />
+          <span data-i18n="settings.confirmFire">Wurf bestätigen</span>
         </label>
         <p class="settings-hint" data-i18n="settings.hotkeyHint">Tastatur im Spiel: Esc = Pause, Tab = Waffen, Q/E = Waffe wechseln, ↑/W/Leertaste = Springen.</p>
       </div>
