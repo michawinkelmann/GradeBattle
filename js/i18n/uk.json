@@ -131,6 +131,8 @@
   "char.bot": "Бот",
   "msg.outOfWorld": "впав зі світу",
   "msg.failed": "залишився на другий рік",
+  "msg.timeUp": "Час!",
+  "msg.botThinking": "Бот думає…",
   "msg.connecting": "Підключення…",
   "msg.hostLost": "Втрачено з'єднання з хостом"
 }

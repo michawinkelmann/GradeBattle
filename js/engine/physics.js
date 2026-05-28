@@ -145,13 +145,16 @@ export function applyExplosion(target, ex, ey, radius, force = 120) {
 }
 
 // Trajectory preview points (no terrain collision, just visualization).
-export function previewTrajectory(x, y, vx, vy, wind, windFactor, steps = 45, stepSize = 0.05) {
+// gravityScale lets the preview match weapons with non-standard gravity
+// (paper plane, compass, chalk, laptop, ...).
+export function previewTrajectory(x, y, vx, vy, wind, windFactor, steps = 60, stepSize = 0.05, gravityScale = 1) {
   const pts = [];
   let px = x, py = y;
   let pvx = vx, pvy = vy;
+  const g = GRAVITY * gravityScale;
   for (let i = 0; i < steps; i++) {
     pvx += windFactor * wind * WIND_FACTOR * stepSize;
-    pvy += GRAVITY * stepSize;
+    pvy += g * stepSize;
     px += pvx * stepSize;
     py += pvy * stepSize;
     if (px < 0 || px > WORLD_W || py > WORLD_H) break;

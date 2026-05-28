@@ -130,6 +130,8 @@
   "char.bot": "Bot",
   "msg.outOfWorld": "ist aus der Welt gefallen",
   "msg.failed": "ist sitzengeblieben",
+  "msg.timeUp": "Zeit!",
+  "msg.botThinking": "Bot überlegt…",
   "msg.connecting": "Verbinde…",
   "msg.hostLost": "Verbindung zum Host verloren"
 }

@@ -4,7 +4,7 @@ import { createLoop } from './engine/loop.js';
 import { createGameState, activePlayer, nextAliveIndex } from './game/state.js';
 import { startTurn, updateTurn, markFired } from './game/turn.js';
 import { stepWorld, fireWeapon } from './game/effects.js';
-import { WALK_SPEED, JUMP_VY } from './game/characters.js';
+import { WALK_SPEED, JUMP_VY, JUMP_COST } from './game/characters.js';
 import { setupHud, renderHud, openWeaponWheel, closeWeaponWheel, invalidateHud } from './ui/hud.js';
 import { setupMenu, showScreen, setLobbyCode, setLobbyPlayers, showEndScreen } from './ui/menu.js';
 import { createControls, getActiveWeapon } from './ui/controls.js';
@@ -82,6 +82,14 @@ async function boot() {
   checkOrientation();
   window.addEventListener('resize', checkOrientation);
   window.addEventListener('orientationchange', checkOrientation);
+
+  // Guard against accidental F5 / tab close mid-match.
+  window.addEventListener('beforeunload', (e) => {
+    if (App.state && !App.state.winner && !App.state.endedReason) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
 
   App.loop = createLoop({
     update: tick,
@@ -220,15 +228,18 @@ function tick(dt) {
     applyRemoteMovement(me, dt);
   }
 
-  // Bot turn logic.
-  if (me && me.isBot && App.state.turnState === 'aim') {
+  // Bot turn logic + "Bot überlegt…" overlay (only toggle when the state flips).
+  const isBotTurn = me && me.isBot && App.state.turnState === 'aim';
+  if (isBotTurn !== App._lastBotTurn) {
+    document.getElementById('bot-thinking')?.classList.toggle('hidden', !isBotTurn);
+    App._lastBotTurn = isBotTurn;
+  }
+  if (isBotTurn) {
     App.botTimer += dt;
     if (App.botTimer > 0.9) {
       App.botTimer = 0;
       const plan = planBotTurn(App.state, me);
-      if (plan) {
-        executeBotPlan(App.state, me, plan);
-      }
+      if (plan) executeBotPlan(App.state, me, plan);
     }
   } else {
     App.botTimer = 0;
@@ -297,7 +308,7 @@ function handleMovement(me, dt) {
     if (me.grounded && me.moveLeft > 20) {
       me.vy = JUMP_VY;
       me.grounded = false;
-      me.moveLeft -= 30;
+      me.moveLeft -= JUMP_COST;
       playSound('jump');
     }
   }
@@ -322,7 +333,7 @@ function applyRemoteMovement(me, dt) {
     if (me.grounded && me.moveLeft > 20) {
       me.vy = JUMP_VY;
       me.grounded = false;
-      me.moveLeft -= 30;
+      me.moveLeft -= JUMP_COST;
       playSound('jump');
     }
   }

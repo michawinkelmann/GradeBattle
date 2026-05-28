@@ -37,10 +37,19 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
 
   // Detect touch-first devices upfront (also matches iPad in laptop-mode).
   let touchDetected = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-  function ensureTouchLayout() {
-    if (touchDetected) document.getElementById('touch-controls')?.classList.remove('hidden');
+  function setTouchVisible(visible) {
+    document.getElementById('touch-controls')?.classList.toggle('hidden', !visible);
   }
+  function ensureTouchLayout() { if (touchDetected) setTouchVisible(true); }
   ensureTouchLayout();
+  // Hide buttons after sustained keyboard/mouse use, re-show as soon as a real touch starts.
+  window.addEventListener('keydown', (e) => {
+    if (!['ArrowLeft','ArrowRight','ArrowUp','a','A','d','D','w','W',' '].includes(e.key)) return;
+    setTouchVisible(false);
+  });
+  window.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') { touchDetected = true; setTouchVisible(true); }
+  });
 
   // For networked clients: relay movement/jump changes to the host.
   if (sendInput) {
@@ -94,6 +103,8 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
   });
 
   canvas.addEventListener('wheel', (e) => {
+    const state = getState();
+    if (!state || state.turnState !== 'aim') return;     // ignore during inflight/resolving/ended
     if (!getActiveLocalPlayer()) return;
     e.preventDefault();
     cycleWeapon(getActiveLocalPlayer, e.deltaY > 0 ? 1 : -1);

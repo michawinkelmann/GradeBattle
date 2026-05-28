@@ -15,19 +15,30 @@ const PREFERRED_WEAPONS = {
 export function planBotTurn(state, bot) {
   const level = bot.botLevel || 'medium';
   const allowed = PREFERRED_WEAPONS[level] || PREFERRED_WEAPONS.medium;
-  const wpns = WEAPONS.filter(w => allowed.includes(w.id) && (isAimable(w) || w.id === 'apfel'));
+  // Only "aimable" projectile weapons - the rest (utility / placeable / area)
+  // isn't wired into the bot's solveAim pipeline. Apple is handled separately.
+  const wpns = WEAPONS.filter(w => allowed.includes(w.id) && isAimable(w));
 
-  // Self-heal sometimes if low, but only while apples remain.
+  // Self-heal sometimes if low — but only while apples remain.
   const apples = bot.weaponAmmo?.apfel ?? 0;
   if (apples > 0 && bot.points < 30 && state.rng.next() < (level === 'hard' ? 0.85 : 0.4)) {
     return { weaponId: 'apfel', mode: 'instant', params: {} };
   }
 
-  // Find target = closest enemy.
-  const targets = state.players.filter(p => !p.outOfGame && !p.outOfWorld && p.id !== bot.id);
-  if (targets.length === 0) return { weaponId: 'passen', mode: 'instant', params: {} };
-  targets.sort((a, b) => Math.hypot(a.x - bot.x, a.y - bot.y) - Math.hypot(b.x - bot.x, b.y - bot.y));
-  const target = targets[0];
+  // Find target — weight by 1/grade so wounded enemies get prioritized
+  // (kill-steal preference) rather than always picking the closest.
+  const enemies = state.players.filter(p => !p.outOfGame && !p.outOfWorld && p.id !== bot.id);
+  if (enemies.length === 0) return { weaponId: 'passen', mode: 'instant', params: {} };
+  enemies.sort((a, b) => {
+    const da = Math.hypot(a.x - bot.x, a.y - bot.y);
+    const db = Math.hypot(b.x - bot.x, b.y - bot.y);
+    // Lower points (=worse grade, more wounded) -> better target. Distance
+    // tiebreaker keeps far-away enemies less attractive than close ones.
+    const sa = da + a.points * 3;
+    const sb = db + b.points * 3;
+    return sa - sb;
+  });
+  const target = enemies[0];
 
   // Pick a weapon.
   const weapon = wpns[Math.floor(state.rng.next() * wpns.length)] || WEAPONS.find(w => w.id === 'buchwurf');

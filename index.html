@@ -57,12 +57,12 @@
           <input type="number" id="setup-turn-time" min="10" max="120" value="30" />
         </label>
         <label class="checkbox">
-          <input type="checkbox" id="setup-round-limit" />
+          <input type="checkbox" id="setup-round-limit" checked />
           <span data-i18n="setup.roundLimit">Rundenlimit aktiv</span>
         </label>
         <label>
           <span data-i18n="setup.rounds">Maximale Runden</span>
-          <input type="number" id="setup-rounds" min="3" max="50" value="15" />
+          <input type="number" id="setup-rounds" min="3" max="50" value="20" />
         </label>
         <label>
           <span data-i18n="setup.map">Map-Thema</span>
@@ -133,6 +133,7 @@
           </div>
           <button class="hud-btn" id="btn-weapons" data-i18n="hud.weapons">Waffen</button>
         </div>
+        <div id="bot-thinking" class="hidden"><span data-i18n="msg.botThinking">Bot überlegt…</span></div>
         <div id="touch-controls" class="hidden">
           <button class="touch-btn" data-touch="left">◀</button>
           <button class="touch-btn" data-touch="right">▶</button>

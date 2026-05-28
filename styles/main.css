@@ -355,6 +355,27 @@ body:has(#touch-controls:not(.hidden)) #hud-current {
   margin-bottom: 80px;
 }
 
+/* Tiny "Bot überlegt…" indicator centred above the bottom HUD. */
+#bot-thinking {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 213, 74, 0.92);
+  color: #1b1f3a;
+  font-family: inherit;
+  font-weight: bold;
+  padding: 6px 14px;
+  border: 2px solid #b8941f;
+  pointer-events: none;
+  animation: pulse 1.4s ease-in-out infinite;
+  z-index: 5;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  50%      { opacity: 0.8; transform: translate(-50%, -1px) scale(1.04); }
+}
+
 #touch-controls {
   position: absolute;
   bottom: 14px;

@@ -167,7 +167,10 @@ export function drawScene(ctx, state, input) {
       const vy = Math.sin(input.aim.angle) * speed;
       const startX = me.x + Math.cos(input.aim.angle) * 12;
       const startY = me.y - me.h * 0.7 + Math.sin(input.aim.angle) * 12;
-      const pts = previewTrajectory(startX, startY, vx, vy, state.wind, wp.windFactor || 0);
+      const pts = previewTrajectory(
+        startX, startY, vx, vy, state.wind, wp.windFactor || 0,
+        60, 0.05, wp.gravityScale != null ? wp.gravityScale : 1
+      );
       // Dotted trajectory (slightly bigger so it's readable on phones).
       ctx.fillStyle = 'rgba(255,213,74,0.85)';
       for (let i = 0; i < pts.length; i += 2) {

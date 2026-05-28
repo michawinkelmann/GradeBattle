@@ -130,6 +130,8 @@
   "char.bot": "Bot",
   "msg.outOfWorld": "fell off the world",
   "msg.failed": "failed the year",
+  "msg.timeUp": "Time!",
+  "msg.botThinking": "Bot thinking…",
   "msg.connecting": "Connecting…",
   "msg.hostLost": "Lost connection to host"
 }

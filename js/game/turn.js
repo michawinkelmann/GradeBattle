@@ -45,10 +45,20 @@ export function updateTurn(state, dt) {
   if (state.turnState === 'aim') {
     state.turnTimer -= dt;
     if (state.turnTimer <= 0) {
-      // Time ran out – auto-pass.
+      // Time ran out – auto-pass with audible cue + floating "Zeit!" text.
       state.turnState = 'resolving';
       state.world.turnEnded = true;
       state.world.resolveTimer = 0.4;
+      playSound('bell');
+      const cur = state.players[state.activeIdx];
+      if (cur) state.world.particles.push({
+        x: cur.x, y: cur.y - cur.h - 8,
+        vx: 0, vy: -25,
+        life: 1.2, age: 0,
+        color: '#ef5b5b',
+        kind: 'text',
+        text: t('msg.timeUp', 'Zeit!')
+      });
     }
     // If a weapon ended the turn during aim (utility), advance.
     if (state.world.turnEnded) {
