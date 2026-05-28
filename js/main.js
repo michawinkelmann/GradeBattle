@@ -8,6 +8,7 @@ import { WALK_SPEED, JUMP_VY } from './game/characters.js';
 import { setupHud, renderHud, openWeaponWheel, closeWeaponWheel, invalidateHud } from './ui/hud.js';
 import { setupMenu, showScreen, setLobbyCode, setLobbyPlayers, showEndScreen } from './ui/menu.js';
 import { createControls, getActiveWeapon } from './ui/controls.js';
+import { bindTutorialControls, showTutorial, hasSeenTutorial } from './ui/tutorial.js';
 import { drawScene } from './render/scene.js';
 import { WEAPONS } from './game/weapons.js';
 import { planBotTurn, executeBotPlan } from './ai/bot.js';
@@ -85,6 +86,13 @@ async function boot() {
   App.loop.start();
 
   onLangChange(() => { if (App.hud) invalidateHud(App.hud); });
+
+  // Tutorial: bind controls + show on first launch.
+  bindTutorialControls();
+  if (!hasSeenTutorial()) {
+    setTimeout(() => showTutorial(), 250);
+  }
+
   showScreen('screen-menu');
 }
 

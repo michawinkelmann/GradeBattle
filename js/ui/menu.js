@@ -1,5 +1,6 @@
 import { setLang, t, applyToDom } from '../i18n/i18n.js';
 import { playSound } from '../game/sound.js';
+import { showTutorial } from './tutorial.js';
 
 const SCREEN_IDS = ['screen-menu', 'screen-setup', 'screen-lobby', 'screen-join', 'screen-game', 'screen-end'];
 
@@ -19,7 +20,7 @@ export function setupMenu({ onStart, onHostLobby, onJoinLobby, onStartLobby, onL
       else if (a === 'hotseat') openSetup('hotseat');
       else if (a === 'net-host') openSetup('host');
       else if (a === 'net-join') showScreen('screen-join');
-      else if (a === 'settings') openSetup('single');  // settings + start combined
+      else if (a === 'tutorial') showTutorial();
     });
   });
 

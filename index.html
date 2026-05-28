@@ -27,7 +27,7 @@
         <button class="btn primary" data-action="hotseat" data-i18n="menu.hotseat">Hotseat</button>
         <button class="btn primary" data-action="net-host" data-i18n="menu.netHost">Spiel erstellen</button>
         <button class="btn primary" data-action="net-join" data-i18n="menu.netJoin">Spiel beitreten</button>
-        <button class="btn" data-action="settings" data-i18n="menu.settings">Einstellungen</button>
+        <button class="btn" data-action="tutorial" data-i18n="menu.tutorial">Anleitung</button>
       </nav>
       <footer class="lang-bar">
         <button class="lang-btn" data-lang="de">DE</button>
@@ -154,6 +154,41 @@
       <div class="row">
         <button class="btn primary" data-action="rematch" data-i18n="end.rematch">Nochmal</button>
         <button class="btn" data-action="to-menu" data-i18n="end.menu">Hauptmenü</button>
+      </div>
+    </div>
+
+    <div id="tutorial-overlay" class="overlay hidden">
+      <div class="tutorial-box">
+        <div class="tutorial-pages">
+          <div class="tutorial-page" data-page="0">
+            <div class="tutorial-illustration" data-illu="aim"></div>
+            <h3 data-i18n="tutorial.aim.title">Zielen</h3>
+            <p data-i18n="tutorial.aim.body">Ziehe vom eigenen Charakter weg wie an einer Steinschleuder. Richtung + Stärke. Lasse los, um zu werfen. Die gepunktete Linie zeigt die Flugbahn.</p>
+          </div>
+          <div class="tutorial-page" data-page="1">
+            <div class="tutorial-illustration" data-illu="wind"></div>
+            <h3 data-i18n="tutorial.wind.title">Wind</h3>
+            <p data-i18n="tutorial.wind.body">Oben siehst du den Wind. Leichte Waffen (Papierflieger) treibt er stark, schwere (Laptop) gar nicht. Bei jedem Zug ändert er sich.</p>
+          </div>
+          <div class="tutorial-page" data-page="2">
+            <div class="tutorial-illustration" data-illu="grades"></div>
+            <h3 data-i18n="tutorial.grades.title">Noten statt Leben</h3>
+            <p data-i18n="tutorial.grades.body">Jede Figur startet mit Note 1. Treffer verschlechtern die Note. Wer Note 6 erreicht, bleibt sitzen und scheidet aus. Es gewinnt, wer übrig bleibt.</p>
+          </div>
+          <div class="tutorial-page" data-page="3">
+            <div class="tutorial-illustration" data-illu="weapons"></div>
+            <h3 data-i18n="tutorial.weapons.title">Waffen wählen</h3>
+            <p data-i18n="tutorial.weapons.body">Über den Knopf „Waffen" (oder Tab) öffnest du das Waffenrad – Buchwurf, Wasserbombe, Megaphon, Apfel zum Heilen … insgesamt 21 Stück.</p>
+          </div>
+        </div>
+        <div class="tutorial-nav">
+          <button class="btn" data-action="tutorial-prev" data-i18n="tutorial.prev">Zurück</button>
+          <div class="tutorial-dots">
+            <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+          <button class="btn primary" data-action="tutorial-next" data-i18n="tutorial.next">Weiter</button>
+        </div>
+        <button class="tutorial-close" data-action="tutorial-close" data-i18n="tutorial.close">Überspringen</button>
       </div>
     </div>
   </div>
