@@ -1,5 +1,5 @@
 import { explodeAt, addPlatform, isSolid } from '../engine/terrain.js';
-import { stepProjectile, applyExplosion, GRAVITY, WIND_FACTOR } from '../engine/physics.js';
+import { stepProjectile, applyExplosion, collideChar, GRAVITY, WIND_FACTOR } from '../engine/physics.js';
 import { getProjectileSprite } from '../render/sprites.js';
 import { applyDamage } from './grades.js';
 import { getWeaponById } from './weapons.js';
@@ -114,7 +114,7 @@ function triggerArea(state, attacker, w) {
   });
   // Damage everyone (including self with distance falloff -> self at center gets some, OK).
   for (const c of state.players) {
-    if (c.outOfGame) continue;
+    if (c.outOfGame || c.outOfWorld) continue;
     if (c.id === attacker.id) continue;
     const dx = c.x - attacker.x;
     const dy = (c.y - c.h / 2) - (attacker.y - attacker.h / 2);
@@ -164,8 +164,15 @@ function triggerUtility(state, attacker, w, params) {
       state.world.turnEnded = false; // Spieler darf weiter agieren – Zug endet erst nach Wurf/Pass
       break;
     case 'heal': {
+      const ammo = attacker.weaponAmmo[w.id];
+      if (ammo != null && ammo <= 0) {
+        // Out of apples - turn was wasted (still ends).
+        state.world.turnEnded = true;
+        break;
+      }
       const before = attacker.points;
       attacker.points = Math.min(100, attacker.points + (w.healAmount || 20));
+      if (attacker.weaponAmmo[w.id] != null) attacker.weaponAmmo[w.id] -= 1;
       state.world.particles.push({
         x: attacker.x, y: attacker.y - attacker.h, vx: 0, vy: -20,
         life: 1, age: 0, color: '#6ee37d', kind: 'text', text: `+${attacker.points - before}`
@@ -175,13 +182,22 @@ function triggerUtility(state, attacker, w, params) {
       break;
     }
     case 'teleport': {
-      // Move attacker to params.targetX, drop to terrain.
       if (params.targetX != null) {
         const tx = Math.max(20, Math.min(state.terrain.width - 20, params.targetX));
-        const ty = Math.max(20, Math.min(state.terrain.height - 30, params.targetY));
+        let ty = Math.max(20, Math.min(state.terrain.height - 30, params.targetY));
+        // Lift target up until the character no longer overlaps the terrain.
+        let safety = 0;
+        while (safety < 200 && collideChar(state.terrain, tx, ty, attacker.w, attacker.h)) {
+          ty -= 1; safety += 1;
+        }
+        if (safety >= 200) {
+          // No free space found above target; cancel without ending the turn.
+          break;
+        }
         attacker.x = tx;
         attacker.y = ty;
         attacker.vx = 0; attacker.vy = 0;
+        attacker.grounded = false;
         playSound('teleport');
       }
       state.world.turnEnded = true;
@@ -189,8 +205,10 @@ function triggerUtility(state, attacker, w, params) {
     }
     case 'eraseTerrain': {
       if (params.targetX != null) {
-        explodeAt(state.terrain, params.targetX, params.targetY, w.radius || 35);
+        const r = w.radius || 35;
+        explodeAt(state.terrain, params.targetX, params.targetY, r);
         addShake(state.camera, 4, 0.2);
+        if (state.onTerrainEvent) state.onTerrainEvent({ kind: 'explode', x: params.targetX, y: params.targetY, r });
       }
       state.world.turnEnded = true;
       break;
@@ -200,6 +218,7 @@ function triggerUtility(state, attacker, w, params) {
         const px = params.targetX - 30;
         const py = params.targetY - 4;
         addPlatform(state.terrain, px, py, 60, 8);
+        if (state.onTerrainEvent) state.onTerrainEvent({ kind: 'platform', x: px, y: py, w: 60, h: 8 });
       }
       state.world.turnEnded = true;
       break;
@@ -230,7 +249,7 @@ export function stepWorld(state, dt) {
     const s = world.pendingSalvo;
     s.timer += dt;
     const attacker = players.find(p => p.id === s.attackerId);
-    if (!attacker) world.pendingSalvo = null;
+    if (!attacker || attacker.outOfGame || attacker.outOfWorld) world.pendingSalvo = null;
     else {
       while (s.timer >= s.interval && s.count > 0) {
         s.timer -= s.interval;
@@ -397,6 +416,7 @@ export function explode(state, p, x, y) {
   explodeAt(state.terrain, x, y, p.radius);
   addShake(state.camera, 4 + p.radius / 20, 0.25);
   spawnParticles(state.world, x, y, 18, particleColorForWeapon(p.weaponId));
+  if (state.onTerrainEvent) state.onTerrainEvent({ kind: 'explode', x, y, r: p.radius, weapon: p.weaponId });
 
   // Damage + knockback to characters.
   for (const c of state.players) {
@@ -457,8 +477,11 @@ function spawnParticles(world, x, y, count, color) {
   }
 }
 
-// Apply lingering clouds at start of turn.
+// Apply lingering clouds at the start of a full round (not every single turn).
+// "2 Runden aktiv" thus means 2 damage ticks, regardless of player count.
 export function applyLingeringAtTurnStart(state) {
+  const firstAlive = state.players.findIndex(p => !p.outOfGame && !p.outOfWorld);
+  if (state.activeIdx !== firstAlive) return;
   for (const l of state.world.lingerings) {
     for (const c of state.players) {
       if (c.outOfGame || c.outOfWorld) continue;

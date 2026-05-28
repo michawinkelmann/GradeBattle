@@ -7,7 +7,7 @@ import { isSolid, WORLD_W, WORLD_H } from '../engine/terrain.js';
 const PREFERRED_WEAPONS = {
   easy: ['buchwurf', 'wasserbombe', 'zirkel'],
   medium: ['buchwurf', 'wasserbombe', 'zirkel', 'laptop', 'papierflieger', 'bananenschale', 'megaphon'],
-  hard: ['buchwurf', 'laptop', 'megaphon', 'zirkel', 'wasserbombe', 'blauer_brief', 'hausaufgaben', 'kreidegewehr']
+  hard: ['buchwurf', 'laptop', 'megaphon', 'zirkel', 'wasserbombe', 'blauer_brief', 'kreidegewehr', 'schulranzen']
 };
 
 // Returns plan or null if not ready to commit yet.
@@ -17,8 +17,9 @@ export function planBotTurn(state, bot) {
   const allowed = PREFERRED_WEAPONS[level] || PREFERRED_WEAPONS.medium;
   const wpns = WEAPONS.filter(w => allowed.includes(w.id) && (isAimable(w) || w.id === 'apfel'));
 
-  // Self-heal sometimes if low.
-  if (bot.points < 30 && state.rng.next() < (level === 'hard' ? 0.85 : 0.4)) {
+  // Self-heal sometimes if low, but only while apples remain.
+  const apples = bot.weaponAmmo?.apfel ?? 0;
+  if (apples > 0 && bot.points < 30 && state.rng.next() < (level === 'hard' ? 0.85 : 0.4)) {
     return { weaponId: 'apfel', mode: 'instant', params: {} };
   }
 
