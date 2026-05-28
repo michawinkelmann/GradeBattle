@@ -370,6 +370,14 @@ export function stepWorld(state, dt) {
       pt.y += pt.vy * dt;
       pt.vy += (pt.gravity || 200) * dt;
     }
+    // Drag for slow-moving smoke / chalk so it billows instead of streaking.
+    if (pt.kind === 'chalk') {
+      pt.vx *= 0.92;
+    }
+    // Paper spins as it tumbles.
+    if (pt.kind === 'paper' && pt.spin != null) {
+      pt.rot += pt.spin * dt;
+    }
     if (pt.kind === 'ring') {
       pt.radius = pt.maxRadius * (pt.age / pt.life);
     }
@@ -408,14 +416,15 @@ export function explode(state, p, x, y) {
     state.world.lingerings.push({
       x, y, radius: p.radius, damage: p.damage, roundsLeft: p.lingerRounds
     });
-    spawnParticles(state.world, x, y, 14, '#c9974c');
+    spawnExplosionFx(state.world, x, y, 'stinkekaese', p.radius);
     playSound('soft');
     return;
   }
 
   explodeAt(state.terrain, x, y, p.radius);
   addShake(state.camera, 4 + p.radius / 20, 0.25);
-  spawnParticles(state.world, x, y, 18, particleColorForWeapon(p.weaponId));
+  spawnExplosionFx(state.world, x, y, p.weaponId, p.radius);
+  playExplosionSound(p.weaponId, p.radius);
   if (state.onTerrainEvent) state.onTerrainEvent({ kind: 'explode', x, y, r: p.radius, weapon: p.weaponId });
 
   // Damage + knockback to characters.
@@ -451,30 +460,135 @@ export function explode(state, p, x, y) {
       });
     }
   }
-  playSound('explode');
 }
 
-function particleColorForWeapon(id) {
-  switch (id) {
-    case 'wasserbombe': return '#4ad6ff';
-    case 'kreidegewehr': return '#f1f1f1';
-    case 'laptop': return '#222';
-    case 'megaphon': return '#ffd54a';
-    case 'stinkekaese': return '#c9974c';
-    default: return '#d8d8d8';
+// Pick a sound that matches the visual FX preset for that weapon.
+function playExplosionSound(weaponId, radius) {
+  const sound = (
+    weaponId === 'wasserbombe' ? 'splash' :
+    weaponId === 'kreidegewehr' || weaponId === 'stinkekaese' ? 'chalk' :
+    weaponId === 'buchwurf' || weaponId === 'schulranzen' || weaponId === 'papierflieger' ||
+      weaponId === 'blauer_brief' || weaponId === 'hausaufgaben' ? 'paper' :
+    weaponId === 'laptop' || weaponId === 'megaphon' ? 'heavy' :
+    'explode'
+  );
+  playSound(sound, { radius });
+}
+
+// --- Weapon-specific explosion FX ---
+//
+// Each preset describes what kind of debris flies on impact: how many particles,
+// which colors, base speed, lifespan, gravity, and the particle kind (which
+// drives how it gets drawn in drawWorld). Falls back to a generic dust burst.
+
+const FX_PRESETS = {
+  wasserbombe: {
+    count: 26,
+    colors: ['#4ad6ff', '#2a8aa8', '#aae3ff'],
+    speed: [60, 220], gravity: 320, life: [0.5, 0.9], kind: 'water'
+  },
+  kreidegewehr: {
+    count: 14,
+    colors: ['#f1f1f1', '#c8d2dc'],
+    speed: [20, 90], gravity: 30, life: [0.7, 1.2], kind: 'chalk'
+  },
+  buchwurf: {
+    count: 16,
+    colors: ['#f1f1f1', '#e8e0d0', '#c8b8a0'],
+    speed: [60, 180], gravity: 180, life: [0.7, 1.1], kind: 'paper'
+  },
+  schulranzen: {
+    count: 16,
+    colors: ['#e8e0d0', '#f1f1f1', '#5a3a20'],
+    speed: [60, 170], gravity: 200, life: [0.6, 1.0], kind: 'paper'
+  },
+  papierflieger: {
+    count: 8,
+    colors: ['#f1f1f1', '#e8e0d0'],
+    speed: [40, 120], gravity: 40, life: [0.8, 1.3], kind: 'paper'
+  },
+  zirkel: {
+    count: 10,
+    colors: ['#a0a0a0', '#5a5a5a'],
+    speed: [80, 200], gravity: 280, life: [0.4, 0.7], kind: 'spark'
+  },
+  laptop: {
+    count: 20,
+    colors: ['#2a2a2a', '#0a0c1e', '#4a4a4a'],
+    speed: [80, 260], gravity: 320, life: [0.5, 0.9], kind: 'debris'
+  },
+  megaphon: {
+    count: 0,                    // visual: shockwave ring
+    colors: ['#ffd54a'],
+    speed: [0, 0], gravity: 0, life: [0.5, 0.5], kind: 'wave'
+  },
+  bananenschale: {
+    count: 8,
+    colors: ['#ffd54a', '#e0b830'],
+    speed: [60, 160], gravity: 220, life: [0.7, 1.0], kind: 'paper'
+  },
+  blauer_brief: {
+    count: 10,
+    colors: ['#3a5fb0', '#f1f1f1'],
+    speed: [60, 160], gravity: 160, life: [0.6, 1.0], kind: 'paper'
+  },
+  hausaufgaben: {
+    count: 12,
+    colors: ['#f1f1f1', '#c8b8a0'],
+    speed: [40, 140], gravity: 200, life: [0.6, 1.0], kind: 'paper'
+  },
+  stinkekaese: {
+    count: 14,
+    colors: ['#c9974c', '#a07b3a', '#b8a36a'],
+    speed: [10, 60], gravity: -15, life: [0.8, 1.5], kind: 'chalk'
+  },
+  reisszwecke: {
+    count: 10,
+    colors: ['#ef5b5b', '#ffd54a'],
+    speed: [80, 220], gravity: 260, life: [0.4, 0.7], kind: 'spark'
+  },
+  apfel: {
+    count: 8,
+    colors: ['#6ee37d', '#f1f1f1'],
+    speed: [40, 100], gravity: 120, life: [0.5, 0.8], kind: 'dot'
   }
-}
+};
 
-function spawnParticles(world, x, y, count, color) {
-  for (let i = 0; i < count; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const s = 60 + Math.random() * 140;
+function spawnExplosionFx(world, x, y, weaponId, radius = 30) {
+  const fx = FX_PRESETS[weaponId] || {
+    count: 18, colors: ['#d8d8d8'], speed: [60, 200], gravity: 200, life: [0.5, 0.9], kind: 'dot'
+  };
+
+  // Wave kind: spawn a single expanding ring.
+  if (fx.kind === 'wave') {
     world.particles.push({
-      x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
-      gravity: 200,
-      life: 0.5 + Math.random() * 0.4, age: 0,
-      color, kind: 'dot'
+      x, y, radius: 0, maxRadius: radius * 1.5,
+      life: 0.6, age: 0, color: fx.colors[0], kind: 'ring'
     });
+    return;
+  }
+
+  for (let i = 0; i < fx.count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const s = fx.speed[0] + Math.random() * (fx.speed[1] - fx.speed[0]);
+    const color = fx.colors[(Math.random() * fx.colors.length) | 0];
+    const life = fx.life[0] + Math.random() * (fx.life[1] - fx.life[0]);
+    const part = {
+      x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+      gravity: fx.gravity,
+      life, age: 0,
+      color, kind: fx.kind
+    };
+    // Paper sprites spin; remember an initial rotation so each looks different.
+    if (fx.kind === 'paper') {
+      part.rot = Math.random() * Math.PI * 2;
+      part.spin = (Math.random() - 0.5) * 12;
+    }
+    if (fx.kind === 'water') {
+      // Water drops use a slightly smaller drag.
+      part.vy -= 40;             // initial pop upward like a splash
+    }
+    world.particles.push(part);
   }
 }
 
@@ -586,6 +700,53 @@ export function drawWorld(ctx, state) {
       const x = Math.round(pt.x), y = Math.round(pt.y);
       ctx.fillRect(x - 1, y, 3, 1);
       ctx.fillRect(x, y - 1, 1, 3);
+      ctx.globalAlpha = 1;
+    } else if (pt.kind === 'chalk') {
+      // Soft growing puff, fades early.
+      const t = pt.age / pt.life;
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, (1 - t) * 0.85);
+      const r = 1 + t * 4;
+      const x = Math.round(pt.x), y = Math.round(pt.y);
+      ctx.fillRect(x - r, y - 1, r * 2, 1);
+      ctx.fillRect(x - 1, y - r, 1, r * 2);
+      ctx.fillRect(x - r + 1, y, r * 2 - 2, 1);
+      ctx.globalAlpha = 1;
+    } else if (pt.kind === 'water') {
+      // 1x2 vertical drop; tiny splash trail.
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, 1 - pt.age / pt.life);
+      const x = Math.round(pt.x), y = Math.round(pt.y);
+      ctx.fillRect(x, y, 1, 2);
+      ctx.fillRect(x - 1, y + 1, 1, 1);
+      ctx.globalAlpha = 1;
+    } else if (pt.kind === 'paper') {
+      // Tumbling 3x2 rectangle; rotation is approximated by swapping w/h around 45 deg phases.
+      const t = pt.age / pt.life;
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      const x = Math.round(pt.x), y = Math.round(pt.y);
+      const phase = ((pt.rot || 0) % Math.PI + Math.PI) % Math.PI;
+      const tall = phase > Math.PI / 4 && phase < (3 * Math.PI) / 4;
+      if (tall) ctx.fillRect(x, y - 1, 2, 3);
+      else ctx.fillRect(x - 1, y, 3, 2);
+      ctx.globalAlpha = 1;
+    } else if (pt.kind === 'spark') {
+      // Bright streak fading fast.
+      const t = pt.age / pt.life;
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, 1 - t * t);
+      const x = Math.round(pt.x), y = Math.round(pt.y);
+      ctx.fillRect(x, y, 1, 1);
+      ctx.fillRect(x - 1, y, 1, 1);
+      ctx.fillRect(x, y - 1, 1, 1);
+      ctx.globalAlpha = 1;
+    } else if (pt.kind === 'debris') {
+      // 2x2 dark chunk.
+      ctx.fillStyle = pt.color;
+      ctx.globalAlpha = Math.max(0, 1 - pt.age / pt.life);
+      const x = Math.round(pt.x), y = Math.round(pt.y);
+      ctx.fillRect(x - 1, y - 1, 2, 2);
       ctx.globalAlpha = 1;
     } else {
       ctx.fillStyle = pt.color;
