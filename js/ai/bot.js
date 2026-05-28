@@ -62,7 +62,7 @@ function solveAim(state, bot, target, weapon, level) {
   let bestD = Infinity;
   for (const a of angles) {
     for (let pi = 0; pi < triesPower; pi++) {
-      const power = 0.35 + (pi / Math.max(1, triesPower - 1)) * 0.65;
+      const power = 0.15 + (pi / Math.max(1, triesPower - 1)) * 0.85;
       const imp = simulateFlight(state, bot, weapon, a, power, target);
       if (imp.d < bestD) {
         bestD = imp.d;
@@ -80,7 +80,7 @@ function solveAim(state, bot, target, weapon, level) {
 }
 
 function simulateFlight(state, bot, weapon, angle, power, target) {
-  const speed = power * 360;
+  const speed = power * 750;
   let x = bot.x + Math.cos(angle) * 12;
   let y = bot.y - bot.h * 0.7 + Math.sin(angle) * 12;
   let vx = Math.cos(angle) * speed;

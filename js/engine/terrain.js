@@ -1,6 +1,6 @@
 import { createRng } from './rng.js';
 
-export const WORLD_W = 1600;
+export const WORLD_W = 1920;
 export const WORLD_H = 600;
 
 const THEMES = {

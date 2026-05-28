@@ -38,9 +38,12 @@ export function stepProjectile(p, terrain, wind, dt) {
 
 // Simple AABB-vs-terrain for character movement; returns updated x,y and grounded flag.
 // Tries to step up small ledges.
+const MAX_CHAR_VX = 220;
 export function moveCharacter(ch, terrain, dt) {
   ch.vy += GRAVITY * dt;
   if (ch.vy > MAX_FALL) ch.vy = MAX_FALL;
+  if (ch.vx > MAX_CHAR_VX) ch.vx = MAX_CHAR_VX;
+  if (ch.vx < -MAX_CHAR_VX) ch.vx = -MAX_CHAR_VX;
 
   const dx = ch.vx * dt;
   const dy = ch.vy * dt;
@@ -84,10 +87,17 @@ export function moveCharacter(ch, terrain, dt) {
     }
   }
 
-  // Off-world fall.
-  if (ch.y - ch.h > WORLD_H + 50 || ch.x < -100 || ch.x > WORLD_W + 100) {
-    ch.outOfWorld = true;
-  }
+  // Friction once grounded so impulses fade when char lands.
+  // Active walking is enforced from main.js by re-setting vx each frame,
+  // so dampening it here is fine.
+  if (ch.grounded) ch.vx *= Math.pow(0.01, dt);
+
+  // Soft walls at world borders so characters don't drift off the map.
+  if (ch.x < 4) { ch.x = 4; if (ch.vx < 0) ch.vx = 0; }
+  if (ch.x > WORLD_W - 4) { ch.x = WORLD_W - 4; if (ch.vx > 0) ch.vx = 0; }
+
+  // Off-world only when falling through the floor.
+  if (ch.y - ch.h > WORLD_H + 50) ch.outOfWorld = true;
 }
 
 export function collideChar(terrain, x, y, w, h) {
@@ -108,7 +118,7 @@ export function collideChar(terrain, x, y, w, h) {
 }
 
 // Apply explosion impulse to a target character; returns damage 0..1 scaled by config.
-export function applyExplosion(target, ex, ey, radius, force = 200) {
+export function applyExplosion(target, ex, ey, radius, force = 120) {
   const cx = target.x;
   const cy = target.y - target.h / 2;
   const dx = cx - ex;
@@ -118,14 +128,17 @@ export function applyExplosion(target, ex, ey, radius, force = 200) {
   const t = 1 - Math.min(1, d / radius);
   const nx = d === 0 ? 0 : dx / d;
   const ny = d === 0 ? -1 : dy / d;
-  target.vx += nx * force * t;
-  target.vy += ny * force * t - 60 * t;
+  // Cap impulse so a single hit never throws a character off the map.
+  const impulseX = Math.max(-180, Math.min(180, nx * force * t));
+  const impulseY = Math.max(-200, Math.min(120, ny * force * t - 40 * t));
+  target.vx += impulseX;
+  target.vy += impulseY;
   target.grounded = false;
-  return t; // 0..1 closeness factor
+  return t;
 }
 
 // Trajectory preview points (no terrain collision, just visualization).
-export function previewTrajectory(x, y, vx, vy, wind, windFactor, steps = 28, stepSize = 0.04) {
+export function previewTrajectory(x, y, vx, vy, wind, windFactor, steps = 45, stepSize = 0.05) {
   const pts = [];
   let px = x, py = y;
   let pvx = vx, pvy = vy;

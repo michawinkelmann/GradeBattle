@@ -83,10 +83,10 @@ export function drawCharacter(ctx, ch) {
 }
 
 export function spawnPositions(count, terrain) {
-  // Spread evenly across map width, drop onto surface from sky.
+  // Spread evenly with a comfortable margin so all players are reachable.
   const out = [];
-  const margin = 80;
-  const span = terrain.width - margin * 2;
+  const margin = 320;
+  const span = Math.max(200, terrain.width - margin * 2);
   for (let i = 0; i < count; i++) {
     const x = margin + (count === 1 ? span / 2 : (i / (count - 1)) * span);
     const y = (terrain.heights[x | 0] || terrain.height * 0.5) - 2;

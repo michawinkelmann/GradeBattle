@@ -61,7 +61,7 @@ export function fireWeapon(state, attacker, weapon, params) {
 }
 
 function spawnProjectile(state, attacker, w, angle, power, opts = {}) {
-  const speed = power * 360;
+  const speed = power * 750;
   const vx = Math.cos(angle) * speed;
   const vy = Math.sin(angle) * speed;
   const startX = attacker.x + Math.cos(angle) * 12;

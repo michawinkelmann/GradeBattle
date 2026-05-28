@@ -45,7 +45,7 @@ export function drawScene(ctx, state, input) {
     const me = activePlayer(state);
     const wp = getActiveWeapon(me);
     if (me && wp && isAimable(wp)) {
-      const speed = input.aim.power * 360;
+      const speed = input.aim.power * 750;
       const vx = Math.cos(input.aim.angle) * speed;
       const vy = Math.sin(input.aim.angle) * speed;
       const startX = me.x + Math.cos(input.aim.angle) * 12;
