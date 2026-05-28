@@ -92,11 +92,18 @@ export function moveCharacter(ch, terrain, dt) {
   // so dampening it here is fine.
   if (ch.grounded) ch.vx *= Math.pow(0.01, dt);
 
-  // Soft walls at world borders so characters don't drift off the map.
-  if (ch.x < 4) { ch.x = 4; if (ch.vx < 0) ch.vx = 0; }
-  if (ch.x > WORLD_W - 4) { ch.x = WORLD_W - 4; if (ch.vx > 0) ch.vx = 0; }
+  // Walls at world borders. If a character hits a wall with significant
+  // horizontal speed, they get knocked off the map ("from the schoolyard").
+  if (ch.x < 4) {
+    if (ch.vx < -120) ch.outOfWorld = true;
+    ch.x = 4; if (ch.vx < 0) ch.vx = 0;
+  }
+  if (ch.x > WORLD_W - 4) {
+    if (ch.vx > 120) ch.outOfWorld = true;
+    ch.x = WORLD_W - 4; if (ch.vx > 0) ch.vx = 0;
+  }
 
-  // Off-world only when falling through the floor.
+  // Off-world when falling through the floor.
   if (ch.y - ch.h > WORLD_H + 50) ch.outOfWorld = true;
 }
 
