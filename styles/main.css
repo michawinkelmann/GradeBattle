@@ -346,6 +346,176 @@ body:has(#touch-controls:not(.hidden)) #hud-current {
   min-width: 240px;
 }
 
+/* Tutorial overlay */
+#tutorial-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 12, 30, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: auto;
+}
+#tutorial-overlay:not(.hidden) { display: flex; }
+
+.tutorial-box {
+  background: var(--bg-2);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow);
+  padding: 22px 26px 18px;
+  width: min(420px, 92vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.tutorial-pages {
+  position: relative;
+  min-height: 230px;
+}
+.tutorial-page {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.tutorial-page.active { display: flex; }
+.tutorial-page h3 {
+  margin: 4px 0 0;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+.tutorial-page p {
+  margin: 0;
+  color: var(--fg);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  max-width: 36ch;
+}
+
+.tutorial-illustration {
+  width: 120px;
+  height: 110px;
+  position: relative;
+  background: #0a0c1e;
+  border: 2px solid var(--border);
+  image-rendering: pixelated;
+}
+
+/* Aim illustration: tiny char + dashed arc */
+.tutorial-illustration[data-illu="aim"]::before {
+  content: '';
+  position: absolute; left: 24px; bottom: 18px;
+  width: 14px; height: 22px;
+  background:
+    linear-gradient(to bottom, #f5d6a8 0 28%, #3a5fb0 28% 70%, #0a0c1e 70% 100%);
+}
+.tutorial-illustration[data-illu="aim"]::after {
+  content: '';
+  position: absolute;
+  left: 38px; top: 22px;
+  width: 64px; height: 50px;
+  border-top: 2px dashed #ffd54a;
+  border-right: 2px dashed #ffd54a;
+  border-radius: 0 50% 0 0;
+  transform: skew(-10deg);
+}
+
+/* Wind illustration: three streaks */
+.tutorial-illustration[data-illu="wind"] {
+  background:
+    linear-gradient(to bottom, #7ecbff 0 70%, #4caf50 70% 78%, #7a5a3a 78% 100%);
+}
+.tutorial-illustration[data-illu="wind"]::before {
+  content: '→  →  →';
+  position: absolute;
+  left: 50%; top: 30%;
+  transform: translateX(-50%);
+  color: #fff;
+  letter-spacing: 6px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-shadow: 1px 1px 0 #0a0c1e;
+}
+
+/* Grades illustration: a bar that fades from green to red */
+.tutorial-illustration[data-illu="grades"] {
+  background: var(--bg-2);
+}
+.tutorial-illustration[data-illu="grades"]::before {
+  content: '1   2   3   4   5   6';
+  position: absolute;
+  inset: 12px 8px auto 8px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.tutorial-illustration[data-illu="grades"]::after {
+  content: '';
+  position: absolute;
+  left: 10px; right: 10px;
+  top: 50%;
+  height: 14px;
+  background: linear-gradient(to right, #6ee37d 0%, #ffd54a 50%, #ef5b5b 100%);
+  border: 2px solid #0a0c1e;
+}
+
+/* Weapons illustration: 3x2 icon grid */
+.tutorial-illustration[data-illu="weapons"] {
+  background: var(--bg-2);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 14px;
+}
+.tutorial-illustration[data-illu="weapons"]::before,
+.tutorial-illustration[data-illu="weapons"]::after {
+  content: '';
+  background: #1b1f3a;
+}
+.tutorial-illustration[data-illu="weapons"]::before {
+  background:
+    radial-gradient(circle at 50% 50%, #4ad6ff 25%, transparent 26%) #1b1f3a;
+}
+.tutorial-illustration[data-illu="weapons"]::after {
+  background:
+    radial-gradient(circle at 50% 50%, #ef5b5b 25%, transparent 26%) #1b1f3a;
+}
+
+.tutorial-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tutorial-dots { display: flex; gap: 6px; }
+.tutorial-dots .dot {
+  width: 8px; height: 8px;
+  background: var(--border);
+  border-radius: 50%;
+  display: inline-block;
+}
+.tutorial-dots .dot.active { background: var(--accent); }
+.tutorial-close {
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  align-self: center;
+}
+.tutorial-close:hover { color: var(--fg); }
+
+@media (pointer: coarse) {
+  .tutorial-nav .btn { min-height: 44px; padding: 8px 16px; }
+}
+
 #orientation-overlay {
   position: absolute;
   inset: 0;
