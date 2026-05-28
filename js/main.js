@@ -1,11 +1,11 @@
-import { initI18n, t, applyToDom } from './i18n/i18n.js';
+import { initI18n, t, applyToDom, onLangChange } from './i18n/i18n.js';
 import { setupCanvas, fitCanvasCss, updateCamera } from './engine/canvas.js';
 import { createLoop } from './engine/loop.js';
 import { createGameState, activePlayer, nextAliveIndex } from './game/state.js';
 import { startTurn, updateTurn, markFired } from './game/turn.js';
 import { stepWorld, fireWeapon } from './game/effects.js';
 import { WALK_SPEED, JUMP_VY } from './game/characters.js';
-import { setupHud, renderHud, openWeaponWheel, closeWeaponWheel } from './ui/hud.js';
+import { setupHud, renderHud, openWeaponWheel, closeWeaponWheel, invalidateHud } from './ui/hud.js';
 import { setupMenu, showScreen, setLobbyCode, setLobbyPlayers, showEndScreen } from './ui/menu.js';
 import { createControls, getActiveWeapon } from './ui/controls.js';
 import { drawScene } from './render/scene.js';
@@ -84,6 +84,7 @@ async function boot() {
   });
   App.loop.start();
 
+  onLangChange(() => { if (App.hud) invalidateHud(App.hud); });
   showScreen('screen-menu');
 }
 

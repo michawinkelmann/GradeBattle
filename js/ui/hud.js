@@ -18,6 +18,8 @@ export function setupHud() {
     btnPause: document.getElementById('hud-pause'),
     weaponWheel: document.getElementById('weapon-wheel'),
     pauseOverlay: document.getElementById('pause-overlay'),
+    // Cache of last-rendered values so we skip touching the DOM when nothing changed.
+    _last: {}
   };
   return hud;
 }
@@ -25,34 +27,47 @@ export function setupHud() {
 export function renderHud(hud, state) {
   const cur = activePlayer(state);
   if (!cur) return;
+  const last = hud._last;
 
-  // Player list
-  const html = state.players.map(p => {
-    const t01 = p.outOfGame ? 0 : p.points / MAX_POINTS;
-    const w = Math.max(0, Math.min(100, t01 * 100));
-    const cls = (p.id === cur.id ? 'active' : '') + (p.outOfGame ? ' out' : '');
-    return `<div class="hud-player ${cls}">
-      <div class="name-row"><span>${escapeHtml(p.name)}</span><span>${p.outOfGame ? '6' : gradeOneDecimal(p.points)}</span></div>
-      <div class="grade-bar-bg"><div class="grade-bar-fg" style="width:${w}%;background:${gradeColor(p.points)};"></div></div>
-    </div>`;
-  }).join('');
-  if (hud.playersEl.innerHTML !== html) hud.playersEl.innerHTML = html;
+  // Player list (fingerprint over data points -> only rebuild HTML when something changed).
+  const playerFp = state.players.map(p => `${p.id}:${p.outOfGame?'X':Math.round(p.points)}:${p.id===cur.id?1:0}`).join('|');
+  if (playerFp !== last.playerFp) {
+    hud.playersEl.innerHTML = state.players.map(p => {
+      const t01 = p.outOfGame ? 0 : p.points / MAX_POINTS;
+      const w = Math.max(0, Math.min(100, t01 * 100));
+      const cls = (p.id === cur.id ? 'active' : '') + (p.outOfGame ? ' out' : '');
+      return `<div class="hud-player ${cls}">
+        <div class="name-row"><span>${escapeHtml(p.name)}</span><span>${p.outOfGame ? '6' : gradeOneDecimal(p.points)}</span></div>
+        <div class="grade-bar-bg"><div class="grade-bar-fg" style="width:${w}%;background:${gradeColor(p.points)};"></div></div>
+      </div>`;
+    }).join('');
+    last.playerFp = playerFp;
+  }
 
   // Wind
   const w = state.wind;
   const arrow = w > 0.05 ? '→' : w < -0.05 ? '←' : '·';
-  hud.windArrow.textContent = arrow;
-  hud.windValue.textContent = (Math.abs(w) * 10).toFixed(1);
+  const windVal = (Math.abs(w) * 10).toFixed(1);
+  if (last.windArrow !== arrow) { hud.windArrow.textContent = arrow; last.windArrow = arrow; }
+  if (last.windVal !== windVal) { hud.windValue.textContent = windVal; last.windVal = windVal; }
 
-  // Timer
-  hud.timer.textContent = Math.max(0, Math.ceil(state.turnTimer || 0));
-  hud.timer.style.color = (state.turnTimer || 0) < 5 ? '#ef5b5b' : '';
+  // Timer (whole-second granularity)
+  const tsec = Math.max(0, Math.ceil(state.turnTimer || 0));
+  if (last.tsec !== tsec) {
+    hud.timer.textContent = tsec;
+    hud.timer.style.color = tsec < 5 ? '#ef5b5b' : '';
+    last.tsec = tsec;
+  }
 
   // Current
-  hud.currentName.textContent = cur.name;
+  if (last.curName !== cur.name) { hud.currentName.textContent = cur.name; last.curName = cur.name; }
   const wp = getActiveWeapon(cur);
-  hud.weaponName.textContent = wp ? t(`weapon.${wp.id}.name`, wp.id) : '';
+  const weaponLabel = wp ? t(`weapon.${wp.id}.name`, wp.id) : '';
+  if (last.weaponLabel !== weaponLabel) { hud.weaponName.textContent = weaponLabel; last.weaponLabel = weaponLabel; }
 }
+
+// Force the next renderHud call to update every field (e.g. after a language change).
+export function invalidateHud(hud) { hud._last = {}; }
 
 export function openWeaponWheel(hud, state, onPick) {
   const cur = activePlayer(state);
@@ -72,9 +87,13 @@ export function openWeaponWheel(hud, state, onPick) {
     label.textContent = t(`weapon.${w.id}.name`, w.id);
     item.appendChild(c);
     item.appendChild(label);
-    item.addEventListener('click', () => onPick(i));
+    item.addEventListener('click', (e) => { e.stopPropagation(); onPick(i); });
     hud.weaponWheel.appendChild(item);
   }
+  // Tap on the backdrop (not on an item) closes the wheel without picking.
+  hud.weaponWheel.onclick = (e) => {
+    if (e.target === hud.weaponWheel) closeWeaponWheel(hud);
+  };
   hud.weaponWheel.classList.remove('hidden');
 }
 

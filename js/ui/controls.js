@@ -35,10 +35,12 @@ export function createControls({ canvas, getState, getActiveLocalPlayer, onWeapo
     _lastSentMoveDir: 0,
   };
 
-  let touchDetected = false;
+  // Detect touch-first devices upfront (also matches iPad in laptop-mode).
+  let touchDetected = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   function ensureTouchLayout() {
     if (touchDetected) document.getElementById('touch-controls')?.classList.remove('hidden');
   }
+  ensureTouchLayout();
 
   // For networked clients: relay movement/jump changes to the host.
   if (sendInput) {
