@@ -54,7 +54,16 @@ export function setState(ch, s) {
 
 export function drawCharacter(ctx, ch) {
   if (ch.outOfWorld) return;
-  const sp = getCharSprite(ch.outOfGame ? 'sit' : ch.state, ch.variant);
+  // Soft shadow on the ground while the character is on or near it.
+  if (ch.grounded) {
+    ctx.fillStyle = 'rgba(10,12,30,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(ch.x, ch.y + 1, 6, 1.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Walk cycle ~6 fps; idle/throw don't use the frame.
+  const frame = ch.state === 'walk' ? Math.floor(ch.stateTime * 6) : 0;
+  const sp = getCharSprite(ch.outOfGame ? 'sit' : ch.state, ch.variant, frame);
   const flip = ch.facing < 0;
   const sx = Math.round(ch.x - sp.width / 2);
   const sy = Math.round(ch.y - sp.height);

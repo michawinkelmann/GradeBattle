@@ -7,6 +7,65 @@ import { getBackdrop } from './sprites.js';
 import { previewTrajectory } from '../engine/physics.js';
 import { isAimable, isPlaceable } from '../game/weapons.js';
 
+// Procedural cloud field — fixed positions, drift via offset using wind & camera.
+const CLOUDS = [
+  { x: 60,  y: 30,  w: 28, h: 8 },
+  { x: 220, y: 50,  w: 36, h: 10 },
+  { x: 380, y: 22,  w: 24, h: 7 },
+  { x: 540, y: 60,  w: 32, h: 9 },
+  { x: 700, y: 40,  w: 28, h: 8 },
+  { x: 880, y: 28,  w: 40, h: 10 },
+  { x: 1050,y: 55,  w: 30, h: 9 },
+  { x: 1240,y: 35,  w: 36, h: 9 },
+  { x: 1420,y: 48,  w: 26, h: 8 },
+  { x: 1600,y: 30,  w: 30, h: 9 },
+  { x: 1780,y: 50,  w: 34, h: 10 }
+];
+
+// Deterministic positions so streaks don't shimmer randomly each frame.
+const WIND_STREAKS = [];
+for (let i = 0; i < 24; i++) {
+  WIND_STREAKS.push({ y: 8 + Math.random() * 100, phase: Math.random(), width: 6 + Math.random() * 8 });
+}
+
+function drawWindStreaks(ctx, wind) {
+  const aw = Math.abs(wind);
+  if (aw < 0.1) return;
+  const dir = wind < 0 ? -1 : 1;
+  const speed = (40 + aw * 220) * dir;     // px/s in screen space
+  const t = performance.now() / 1000;
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  const visibleCount = Math.min(WIND_STREAKS.length, Math.ceil(aw * 24));
+  for (let i = 0; i < visibleCount; i++) {
+    const s = WIND_STREAKS[i];
+    const drift = (s.phase * VIEW_W + speed * t) % (VIEW_W + 80);
+    const x = dir > 0 ? -40 + drift : VIEW_W + 40 - drift;
+    ctx.fillRect(Math.round(x), Math.round(s.y), s.width, 1);
+  }
+}
+
+function drawClouds(ctx, terrain, camera, wind) {
+  // Drift is purely visual; modulate by wind so heavier wind => visibly faster sky.
+  const driftSpeed = 6 + wind * 30;       // px per sec
+  const t = performance.now() / 1000;
+  const drift = (driftSpeed * t) % terrain.width;
+  for (const c of CLOUDS) {
+    let x = c.x - drift;
+    x = ((x % terrain.width) + terrain.width) % terrain.width;
+    // Screen-space cloud (ignore camera Y for parallax).
+    const sx = Math.round(x - camera.x * 0.15);
+    const sy = Math.round(c.y - camera.y * 0.05);
+    if (sx + c.w < -20 || sx > VIEW_W + 20) continue;
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    // Soft-edge cloud: three overlapping rounded rects.
+    ctx.fillRect(sx + 3, sy, c.w - 6, c.h);
+    ctx.fillRect(sx, sy + 2, c.w, c.h - 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillRect(sx + 6, sy - 1, c.w - 14, 1);
+    ctx.fillRect(sx + 2, sy + c.h - 1, c.w - 4, 1);
+  }
+}
+
 export function drawScene(ctx, state, input) {
   const { terrain, camera, players } = state;
   // Sky gradient
@@ -15,6 +74,15 @@ export function drawScene(ctx, state, input) {
   grad.addColorStop(1, terrain.theme.sky[1]);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+  // Clouds drifting in the sky — outdoor maps only.
+  if (terrain.themeName === 'schulhof') {
+    drawClouds(ctx, terrain, camera, state.wind);
+  }
+
+  // Wind streaks: short horizontal lines flying in the wind's direction.
+  // Number of streaks scales with |wind|; speed too. At wind 0 nothing renders.
+  drawWindStreaks(ctx, state.wind);
 
   // Parallax backdrop (subtle far layer).
   const backdrop = getBackdrop(terrain.theme);

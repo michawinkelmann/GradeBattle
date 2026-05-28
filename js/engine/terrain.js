@@ -9,21 +9,28 @@ const THEMES = {
     ground: '#7a5a3a',
     grass: '#4caf50',
     rock: '#6b4a2a',
-    backdrop: 'building'
+    backdrop: 'building',
+    surface: 'grass'
   },
   klassenraum: {
     sky: ['#d8c298', '#f0dca8'],
-    ground: '#6b4a2a',
-    grass: '#8a6a3a',
+    ground: '#8a6a3a',
+    grass: '#a0764a',
     rock: '#4a3320',
-    backdrop: 'blackboard'
+    backdrop: 'blackboard',
+    surface: 'planks',
+    plankDark: '#5e441f',
+    plankLight: '#a0764a'
   },
   turnhalle: {
     sky: ['#c5d3e8', '#e8efff'],
-    ground: '#a07b4a',
-    grass: '#c9974c',
+    ground: '#c9974c',
+    grass: '#dba867',
     rock: '#705536',
-    backdrop: 'wallbars'
+    backdrop: 'wallbars',
+    surface: 'planks',
+    plankDark: '#8a6630',
+    plankLight: '#dba867'
   }
 };
 
@@ -67,15 +74,46 @@ export function createTerrain(seed, themeName = 'schulhof') {
   ctx.closePath();
   ctx.fill();
 
-  // Grass strip on surface.
-  ctx.strokeStyle = theme.grass;
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  for (let x = 0; x < w; x++) {
-    if (x === 0) ctx.moveTo(x, heights[x]);
-    else ctx.lineTo(x, heights[x]);
+  // Surface decoration depends on the theme.
+  if (theme.surface === 'planks') {
+    // Wooden floor planks: alternating dark/light vertical strips, clipped to the ground silhouette.
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    for (let x = 0; x < w; x++) ctx.lineTo(x, heights[x]);
+    ctx.lineTo(w, h);
+    ctx.closePath();
+    ctx.clip();
+    const plankW = 22;
+    for (let x = 0; x < w; x += plankW) {
+      const dark = ((x / plankW) | 0) % 2 === 0;
+      ctx.fillStyle = dark ? theme.plankDark : theme.plankLight;
+      ctx.fillRect(x, 0, plankW, h);
+    }
+    // Thin dark seams between planks (only inside the clipped ground).
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    for (let x = plankW; x < w; x += plankW) ctx.fillRect(x - 1, 0, 1, h);
+    ctx.restore();
+    // Top edge highlight along the silhouette.
+    ctx.strokeStyle = theme.grass;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      if (x === 0) ctx.moveTo(x, heights[x]);
+      else ctx.lineTo(x, heights[x]);
+    }
+    ctx.stroke();
+  } else {
+    // Grass strip on surface (outdoor maps).
+    ctx.strokeStyle = theme.grass;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      if (x === 0) ctx.moveTo(x, heights[x]);
+      else ctx.lineTo(x, heights[x]);
+    }
+    ctx.stroke();
   }
-  ctx.stroke();
 
   // Floating platforms (1-3).
   const platCount = rng.int(1, 3);
@@ -85,7 +123,7 @@ export function createTerrain(seed, themeName = 'schulhof') {
     const pw = rng.range(60, 140);
     ctx.fillStyle = theme.rock;
     ctx.fillRect(px, py, pw, 12);
-    ctx.fillStyle = theme.grass;
+    ctx.fillStyle = theme.surface === 'planks' ? theme.plankLight : theme.grass;
     ctx.fillRect(px, py, pw, 3);
   }
 
@@ -197,7 +235,9 @@ export function addPlatform(terrain, x, y, w, h, color) {
   terrain.ctx.save();
   terrain.ctx.fillStyle = color || terrain.theme.rock;
   terrain.ctx.fillRect(x | 0, y | 0, w | 0, h | 0);
-  terrain.ctx.fillStyle = terrain.theme.grass;
+  terrain.ctx.fillStyle = terrain.theme.surface === 'planks'
+    ? terrain.theme.plankLight
+    : terrain.theme.grass;
   terrain.ctx.fillRect(x | 0, y | 0, w | 0, 2);
   terrain.ctx.restore();
   fillMaskRect(terrain, x, y, w, h, 1);
