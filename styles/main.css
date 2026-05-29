@@ -452,47 +452,156 @@ body:has(#touch-controls:not(.hidden)) #hud-current {
   #touch-controls { bottom: 10px; left: 10px; gap: 8px; }
 }
 
+/* Weapon picker overlay: a full-screen panel with a header, scrollable body,
+   usage sections, and richly-labelled weapon cards. */
 #weapon-wheel {
   position: absolute;
   inset: 0;
-  background: rgba(10, 12, 30, 0.9);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
-  padding: 20px;
+  background: rgba(10, 12, 30, 0.97);
+  display: flex;
+  flex-direction: column;
   pointer-events: auto;
+}
+#weapon-wheel.visible { display: flex; }
+
+.wheel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg);
+  color: var(--accent);
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+.wheel-close {
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--border);
+  font-family: inherit;
+  font-size: 1rem;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+.wheel-close:hover { background: #3a4072; }
+
+.wheel-scroll {
+  flex: 1 1 auto;
   overflow-y: auto;
-  align-content: start;
+  padding: 12px 18px 18px;
 }
 
-#weapon-wheel.visible { display: grid; }
+.wheel-section { margin-bottom: 16px; }
+.wheel-section-title {
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 4px;
+}
+.wheel-section-icon { font-size: 1rem; }
+
+.wheel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
 
 .weapon-item {
   background: var(--bg-2);
   border: 2px solid var(--border);
-  padding: 12px 10px;
+  border-radius: 4px;
+  padding: 8px 9px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
-  text-align: center;
-  min-height: 100px;
+  gap: 5px;
+  text-align: left;
+  transition: background 0.1s, transform 0.05s;
 }
-.weapon-item:active { background: #3a4072; }
+.weapon-item:hover { background: #333a66; }
+.weapon-item:active { transform: scale(0.97); }
 .weapon-item.selected { outline: 3px solid var(--accent); background: #3a4072; }
-.weapon-item canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+
+.wi-top { display: flex; align-items: center; gap: 8px; }
+.wi-icon {
+  width: 30px; height: 30px;
+  image-rendering: pixelated;
+  background: #0a0c1e;
+  border: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.wi-badge {
+  color: #0a0c1e;
+  font-size: 0.62rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.wi-name {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--fg);
+  line-height: 1.1;
+}
+.wi-stats { display: flex; flex-direction: column; gap: 2px; }
+.wi-stat {
+  font-size: 0.68rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.wi-stat b { color: var(--fg); font-weight: normal; min-width: 48px; display: inline-block; }
+.wi-desc { font-size: 0.7rem; color: var(--muted); line-height: 1.25; }
+.wi-bar {
+  flex: 1 1 auto;
+  height: 4px;
+  background: #0a0c1e;
+  border: 1px solid var(--border);
+  position: relative;
+  min-width: 30px;
+}
+.wi-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; }
+
+/* Type badge shown next to the weapon name in the bottom HUD chip. */
+.wtype-badge {
+  color: #0a0c1e;
+  font-size: 0.65rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 6px;
+}
 
 @media (pointer: coarse) {
-  #weapon-wheel { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); padding: 12px; gap: 8px; }
-  .weapon-item { font-size: 0.75rem; padding: 10px 4px; min-height: 86px; }
-  .weapon-item canvas { width: 40px; height: 40px; }
+  .wheel-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .weapon-item { padding: 10px; }
+  .wi-icon { width: 36px; height: 36px; }
+  .wheel-close { width: 44px; height: 44px; }
+}
+@media (max-width: 600px) {
+  .wheel-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+  .wheel-header { font-size: 0.95rem; padding: 10px 14px; }
+  .wheel-scroll { padding: 10px 12px 14px; }
 }
 
 .hidden { display: none !important; }
 .visible { display: flex !important; }
-#weapon-wheel.visible { display: grid !important; }
+#weapon-wheel.visible { display: flex !important; }
 
 .overlay {
   position: absolute;
