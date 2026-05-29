@@ -461,6 +461,9 @@ body:has(#touch-controls:not(.hidden)) #hud-current {
   display: flex;
   flex-direction: column;
   pointer-events: auto;
+  /* Above the mini-map (4), bot-thinking (5), fire-confirm (6) so it fully
+     covers all in-game HUD overlays while picking a weapon. */
+  z-index: 20;
 }
 #weapon-wheel.visible { display: flex; }
 

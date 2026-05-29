@@ -12,13 +12,34 @@ import { SHIRT_HEX } from '../game/characters.js';
 // Tiny world-overview shown as an HTML canvas in the HUD. Each call re-draws
 // the terrain silhouette (cheap, sampled from the heights array) and overlays
 // the players + projectiles as coloured dots.
+// Shared: given the current aim input, compute the predicted shot. Returns
+// { pts, impact, hue } or null when there's no active aimable drag.
+export function computeAimShot(state, input) {
+  if (!input || !input.aim || state.turnState !== 'aim') return null;
+  const me = activePlayer(state);
+  const wp = me ? getActiveWeapon(me) : null;
+  if (!me || !wp || !isAimable(wp)) return null;
+  const aim = input.aim;
+  const speed = aim.power * 750;
+  const dirX = Math.cos(aim.angle), dirY = Math.sin(aim.angle);
+  const startX = me.x + dirX * 12;
+  const startY = me.y - me.h * 0.7 + dirY * 12;
+  const { pts, impact } = predictTrajectory(
+    startX, startY, dirX * speed, dirY * speed, state.wind, wp.windFactor || 0,
+    state.terrain, wp.gravityScale != null ? wp.gravityScale : 1
+  );
+  return { pts, impact, hue: Math.round((1 - aim.power) * 120) };
+}
+
 let _lastMinimap = 0;
-export function drawMinimap(state) {
+export function drawMinimap(state, input) {
   const el = document.getElementById('hud-minimap');
   if (!el || el.classList.contains('hidden')) return;
   // Throttle to ~12 fps; the minimap doesn't need 60 Hz fidelity.
+  // While aiming, refresh faster so the predicted line tracks the drag.
+  const aiming = input && input.aim && state.turnState === 'aim';
   const now = performance.now();
-  if (now - _lastMinimap < 80) return;
+  if (now - _lastMinimap < (aiming ? 30 : 80)) return;
   _lastMinimap = now;
   const ctx = el.getContext('2d');
   ctx.imageSmoothingEnabled = false;
@@ -72,6 +93,28 @@ export function drawMinimap(state) {
       ctx.strokeStyle = '#ffd54a';
       ctx.lineWidth = 1;
       ctx.strokeRect(px - 3, py - 4, 6, 6);
+    }
+  }
+
+  // Predicted aim trajectory + impact, so you can judge the shot on the
+  // overview while you drag.
+  const shot = computeAimShot(state, input);
+  if (shot) {
+    const col = `hsl(${shot.hue},90%,60%)`;
+    ctx.fillStyle = col;
+    for (let i = 0; i < shot.pts.length; i += 2) {
+      ctx.fillRect(Math.round(shot.pts[i].x * sx), Math.round(shot.pts[i].y * sy), 1, 1);
+    }
+    if (shot.impact) {
+      const ix = Math.round(shot.impact.x * sx), iy = Math.round(shot.impact.y * sy);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(ix - 2, iy - 2, 4, 4);
+      ctx.fillStyle = col;
+      ctx.fillRect(ix, iy - 4, 1, 3);
+      ctx.fillRect(ix, iy + 2, 1, 3);
+      ctx.fillRect(ix - 4, iy, 3, 1);
+      ctx.fillRect(ix + 2, iy, 3, 1);
     }
   }
 }
