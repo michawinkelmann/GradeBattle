@@ -70,6 +70,8 @@
   "hud.weapons": "Weapons",
   "hud.pause": "II",
   "hud.turn": "Turn",
+  "hud.minimap": "Mini-map (overview)",
+  "hud.confirmFire": "Confirm throw",
   "pause.title": "Pause",
   "pause.resume": "Resume",
   "pause.quit": "Quit match",

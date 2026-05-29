@@ -21,11 +21,8 @@ export function isReducedMotion() {
 
 export function setReducedMotion(v) { setBool('reducedMotion', v); }
 
-// "Static overview" camera: keep the whole world in view instead of panning.
-export function isStaticCamera() { return getBool('staticCamera', false); }
-export function setStaticCamera(v) { setBool('staticCamera', v); }
-
 // "Confirm fire": drag-aim freezes preview on release; player must tap a
 // confirm button before the throw is sent. Helps against accidental fires.
+// Bound to an in-HUD toggle (NOT exposed in the settings screen).
 export function isConfirmFire() { return getBool('confirmFire', false); }
 export function setConfirmFire(v) { setBool('confirmFire', v); }

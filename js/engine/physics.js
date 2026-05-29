@@ -18,11 +18,16 @@ export function stepProjectile(p, terrain, wind, dt) {
     p.vx += windAcc * sdt;
     p.vy += gravity * sdt;
     if (p.vy > MAX_FALL) p.vy = MAX_FALL;
-    const nx = p.x + p.vx * sdt;
-    const ny = p.y + p.vy * sdt;
+    let nx = p.x + p.vx * sdt;
+    let ny = p.y + p.vy * sdt;
 
-    // Off-world
-    if (nx < -50 || nx > WORLD_W + 50 || ny > WORLD_H + 100) {
+    // Side / top walls: bounce off so projectiles stay in play.
+    if (nx < 2) { nx = 2; p.vx = Math.abs(p.vx) * 0.55; }
+    if (nx > WORLD_W - 2) { nx = WORLD_W - 2; p.vx = -Math.abs(p.vx) * 0.55; }
+    if (ny < -40) { ny = -40; p.vy = Math.abs(p.vy) * 0.4; }
+
+    // Off-world only when falling past the bottom of the map.
+    if (ny > WORLD_H + 100) {
       p.x = nx; p.y = ny;
       return { hit: true, reason: 'offworld' };
     }
@@ -92,18 +97,23 @@ export function moveCharacter(ch, terrain, dt) {
   // so dampening it here is fine.
   if (ch.grounded) ch.vx *= Math.pow(0.01, dt);
 
-  // Walls at world borders. If a character hits a wall with significant
-  // horizontal speed, they get knocked off the map ("from the schoolyard").
+  // Solid school-fence walls at world borders. The character bounces back
+  // softly instead of falling off the map sideways.
   if (ch.x < 4) {
-    if (ch.vx < -120) ch.outOfWorld = true;
-    ch.x = 4; if (ch.vx < 0) ch.vx = 0;
+    ch.x = 4;
+    if (ch.vx < 0) ch.vx = -ch.vx * 0.35;
   }
   if (ch.x > WORLD_W - 4) {
-    if (ch.vx > 120) ch.outOfWorld = true;
-    ch.x = WORLD_W - 4; if (ch.vx > 0) ch.vx = 0;
+    ch.x = WORLD_W - 4;
+    if (ch.vx > 0) ch.vx = -ch.vx * 0.35;
+  }
+  // Soft top so a strong upward knockback doesn't fly off the top of the world.
+  if (ch.y - ch.h < -4) {
+    ch.y = ch.h - 4;
+    if (ch.vy < 0) ch.vy = 0;
   }
 
-  // Off-world when falling through the floor.
+  // Only a true fall through the floor counts as out-of-world.
   if (ch.y - ch.h > WORLD_H + 50) ch.outOfWorld = true;
 }
 

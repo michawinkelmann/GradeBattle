@@ -54,6 +54,10 @@ export function applyToDom(root = document) {
     const key = el.getAttribute('data-i18n-placeholder');
     el.placeholder = t(key, el.placeholder);
   });
+  root.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const key = el.getAttribute('data-i18n-title');
+    el.title = t(key, el.title);
+  });
   document.documentElement.lang = current;
   document.querySelectorAll('.lang-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.lang === current);
