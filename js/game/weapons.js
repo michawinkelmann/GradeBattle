@@ -143,6 +143,33 @@ export function getWeaponByIndex(i) {
   return WEAPONS[((i % WEAPONS.length) + WEAPONS.length) % WEAPONS.length];
 }
 
+// Per-archetype presentation metadata for the weapon wheel: a colour for the
+// type badge and the i18n key suffix (weaponcat.<key>) for its label.
+export const ARCHETYPE_META = {
+  direct:    { key: 'direct',    color: '#4ad6ff' },
+  lobbed:    { key: 'lobbed',    color: '#6ee37d' },
+  heavy:     { key: 'heavy',     color: '#ef5b5b' },
+  cluster:   { key: 'cluster',   color: '#ff8a3a' },
+  salvo:     { key: 'salvo',     color: '#ff8a3a' },
+  area:      { key: 'area',      color: '#a05bcf' },
+  lingering: { key: 'lingering', color: '#c9974c' },
+  homing:    { key: 'homing',    color: '#3a5fb0' },
+  airstrike: { key: 'airstrike', color: '#a05bcf' },
+  mine:      { key: 'mine',      color: '#ef5b5b' },
+  utility:   { key: 'utility',   color: '#b9c0d8' }
+};
+
+// Broad usage mode that tells the player *how* a weapon is fired. This is the
+// primary grouping in the weapon wheel.
+//   'aim'     – drag from the character to aim & throw
+//   'place'   – tap a spot on the map (airstrike, teleport, erase, platform)
+//   'instant' – takes effect immediately on yourself / around you
+export function weaponUsage(w) {
+  if (isPlaceable(w)) return 'place';
+  if (isInstant(w)) return 'instant';
+  return 'aim';
+}
+
 // Returns true if weapon can be aimed (drag-fire); false for area/utility/airstrike modes.
 export function isAimable(w) {
   return ['direct', 'lobbed', 'heavy', 'cluster', 'salvo', 'lingering', 'homing', 'mine'].includes(w.archetype);
