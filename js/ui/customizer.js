@@ -88,8 +88,18 @@ function makeSlotEl(slot, index, onChange) {
   // Preview canvas (native sprite resolution, scaled via CSS).
   const cvs = document.createElement('canvas');
   cvs.width = 12; cvs.height = 18;
+  cvs.className = 'char-preview';
   el.appendChild(cvs);
   renderPreview(cvs, slot.variant);
+
+  // Body holds two rows: identity (name + human/bot) and appearance controls.
+  const body = document.createElement('div');
+  body.className = 'char-slot-body';
+  el.appendChild(body);
+
+  const row1 = document.createElement('div');
+  row1.className = 'cs-row cs-row-id';
+  body.appendChild(row1);
 
   // Name input.
   const name = document.createElement('input');
@@ -103,7 +113,7 @@ function makeSlotEl(slot, index, onChange) {
     saveSlots();
     onChange && onChange();
   });
-  el.appendChild(name);
+  row1.appendChild(name);
 
   // Bot toggle.
   const botBtn = document.createElement('button');
@@ -118,80 +128,86 @@ function makeSlotEl(slot, index, onChange) {
     saveSlots();
     onChange && onChange();
   });
-  el.appendChild(botBtn);
+  row1.appendChild(botBtn);
 
-  // Variant cycler: a <- shirtSwatch -> button group, similar for hair + style.
-  function cyclerGroup(opts, currentKey, onPick, swatchHexLookup) {
-    const grp = document.createElement('span');
+  const row2 = document.createElement('div');
+  row2.className = 'cs-row cs-row-look';
+  body.appendChild(row2);
+
+  // A labelled cycler: caption above a [◀ value ▶] control. `swatchHexLookup`
+  // renders the current value as a colour swatch; otherwise as a text label.
+  function cyclerGroup(caption, opts, currentKey, swatchHexLookup) {
+    const wrap = document.createElement('div');
+    wrap.className = 'cs-cycler';
+
+    const cap = document.createElement('div');
+    cap.className = 'cs-cap';
+    cap.textContent = caption;
+    wrap.appendChild(cap);
+
+    const grp = document.createElement('div');
     grp.className = 'opt-group';
+    wrap.appendChild(grp);
 
     const prev = document.createElement('button');
     prev.type = 'button'; prev.className = 'opt-btn'; prev.textContent = '◀';
-    prev.addEventListener('click', () => {
-      const next = cycle(opts, slot.variant[currentKey], -1);
-      slot.variant[currentKey] = next;
-      slot.variant = makeVariant(slot.variant);
-      saveSlots();
-      renderPreview(cvs, slot.variant);
-      if (swatchHexLookup) swatch.style.background = swatchHexLookup[slot.variant[currentKey]];
-      onChange && onChange();
-    });
     grp.appendChild(prev);
 
-    let swatch = null;
+    let valueEl;
     if (swatchHexLookup) {
-      swatch = document.createElement('span');
-      swatch.className = 'opt-btn';
-      swatch.style.background = swatchHexLookup[slot.variant[currentKey]];
-      swatch.style.minWidth = '20px';
-      swatch.style.padding = '0';
-      swatch.style.height = '20px';
-      swatch.style.display = 'inline-block';
-      grp.appendChild(swatch);
+      valueEl = document.createElement('span');
+      valueEl.className = 'opt-swatch';
+      valueEl.style.background = swatchHexLookup[slot.variant[currentKey]];
     } else {
-      const lbl = document.createElement('span');
-      lbl.className = 'opt-btn';
-      lbl.textContent = t(`setup.style.${slot.variant.style}`, slot.variant.style);
-      lbl.style.cursor = 'default';
-      grp.appendChild(lbl);
-      grp.dataset.styleLabel = '1';
+      valueEl = document.createElement('span');
+      valueEl.className = 'opt-value';
+      valueEl.textContent = t(`setup.style.${slot.variant.style}`, slot.variant.style);
     }
+    grp.appendChild(valueEl);
 
     const next = document.createElement('button');
     next.type = 'button'; next.className = 'opt-btn'; next.textContent = '▶';
-    next.addEventListener('click', () => {
-      const v = cycle(opts, slot.variant[currentKey], 1);
-      slot.variant[currentKey] = v;
+    grp.appendChild(next);
+
+    function apply(dir) {
+      slot.variant[currentKey] = cycle(opts, slot.variant[currentKey], dir);
       slot.variant = makeVariant(slot.variant);
       saveSlots();
       renderPreview(cvs, slot.variant);
-      if (swatchHexLookup) swatch.style.background = swatchHexLookup[slot.variant[currentKey]];
-      else grp.querySelector('.opt-btn:nth-child(2)').textContent = t(`setup.style.${slot.variant.style}`, slot.variant.style);
+      if (swatchHexLookup) valueEl.style.background = swatchHexLookup[slot.variant[currentKey]];
+      else valueEl.textContent = t(`setup.style.${slot.variant.style}`, slot.variant.style);
       onChange && onChange();
-    });
-    grp.appendChild(next);
-
-    return grp;
+    }
+    prev.addEventListener('click', () => apply(-1));
+    next.addEventListener('click', () => apply(1));
+    return wrap;
   }
 
-  el.appendChild(cyclerGroup(SHIRT_OPTIONS, 'shirt', null, SHIRT_HEX));
-  el.appendChild(cyclerGroup(HAIR_OPTIONS, 'hair', null, HAIR_HEX));
-  el.appendChild(cyclerGroup(STYLE_OPTIONS, 'style'));
+  row2.appendChild(cyclerGroup(t('setup.shirt', 'Shirt'), SHIRT_OPTIONS, 'shirt', SHIRT_HEX));
+  row2.appendChild(cyclerGroup(t('setup.hair', 'Haare'), HAIR_OPTIONS, 'hair', HAIR_HEX));
+  row2.appendChild(cyclerGroup(t('setup.styleLabel', 'Stil'), STYLE_OPTIONS, 'style'));
 
-  // Glasses toggle.
+  // Glasses toggle (its own labelled cell so it lines up with the cyclers).
+  const glWrap = document.createElement('div');
+  glWrap.className = 'cs-cycler';
+  const glCap = document.createElement('div');
+  glCap.className = 'cs-cap';
+  glCap.textContent = t('setup.glasses', 'Brille');
+  glWrap.appendChild(glCap);
   const glBtn = document.createElement('button');
   glBtn.type = 'button';
-  glBtn.className = 'opt-toggle' + (slot.variant.glasses ? ' on' : '');
-  glBtn.textContent = t('setup.glasses', 'Brille');
-  glBtn.title = t('setup.glasses', 'Brille');
+  glBtn.className = 'opt-toggle gl-toggle' + (slot.variant.glasses ? ' on' : '');
+  glBtn.textContent = slot.variant.glasses ? t('setup.on', 'An') : t('setup.off', 'Aus');
   glBtn.addEventListener('click', () => {
     slot.variant.glasses = !slot.variant.glasses;
     glBtn.classList.toggle('on', slot.variant.glasses);
+    glBtn.textContent = slot.variant.glasses ? t('setup.on', 'An') : t('setup.off', 'Aus');
     saveSlots();
     renderPreview(cvs, slot.variant);
     onChange && onChange();
   });
-  el.appendChild(glBtn);
+  glWrap.appendChild(glBtn);
+  row2.appendChild(glWrap);
 
   return el;
 }

@@ -90,7 +90,7 @@ html, body {
 .players-list {
   margin-top: 14px;
   width: 100%;
-  max-width: 460px;
+  max-width: 560px;
 }
 .players-list-header {
   color: var(--muted);
@@ -102,71 +102,131 @@ html, body {
 #setup-players-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .char-slot {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
+  gap: 10px;
   background: var(--bg-2);
   border: 2px solid var(--border);
-  padding: 6px 8px;
+  padding: 8px 10px;
 }
-.char-slot canvas {
-  width: 36px;
-  height: 54px;
+.char-preview {
+  width: 40px;
+  height: 60px;
+  flex: 0 0 auto;
   image-rendering: pixelated;
   background: #0a0c1e;
   border: 1px solid var(--border);
+  align-self: center;
 }
-.char-slot .name-input {
+.char-slot-body {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cs-row { display: flex; align-items: center; gap: 8px; }
+.cs-row-id .name-input {
   background: transparent;
   color: var(--fg);
   border: none;
   border-bottom: 1px solid var(--border);
   font-family: inherit;
-  font-size: 0.9rem;
-  padding: 2px 4px;
+  font-size: 1rem;
+  padding: 3px 4px;
   flex: 1 1 0;
-  min-width: 60px;
+  min-width: 0;
 }
-.char-slot .opt-group {
+.cs-row-id .name-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+.cs-row-look {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+/* Each appearance control: caption on top, control below. */
+.cs-cycler {
   display: flex;
-  gap: 2px;
+  flex-direction: column;
   align-items: center;
+  gap: 3px;
 }
-.char-slot .opt-btn {
+.cs-cap {
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.opt-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
   background: var(--bg);
+}
+.opt-btn {
+  background: transparent;
   color: var(--fg);
-  border: 1px solid var(--border);
+  border: none;
   font-family: inherit;
-  font-size: 0.75rem;
-  padding: 4px 6px;
-  cursor: pointer;
-  min-width: 22px;
-  min-height: 24px;
-}
-.char-slot .opt-btn:active { background: var(--accent); color: var(--bg); }
-.char-slot .opt-label {
-  color: var(--muted);
   font-size: 0.7rem;
-  margin-right: 2px;
+  cursor: pointer;
+  width: 22px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
 }
-.char-slot .opt-toggle {
+.opt-btn:hover { background: #3a4072; }
+.opt-btn:active { background: var(--accent); color: var(--bg); }
+.opt-swatch {
+  width: 26px;
+  height: 26px;
+  display: block;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.opt-value {
+  min-width: 48px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: var(--fg);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 0 4px;
+  flex: 0 0 auto;
+}
+.opt-toggle {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--muted);
   font-family: inherit;
-  font-size: 0.75rem;
-  padding: 4px 8px;
+  font-size: 0.8rem;
+  padding: 4px 12px;
   cursor: pointer;
-  min-height: 24px;
+  height: 28px;
 }
-.char-slot .opt-toggle.on { background: var(--accent); color: var(--bg); border-color: #b8941f; }
+.opt-toggle.on { background: var(--accent); color: var(--bg); border-color: #b8941f; }
+.gl-toggle { min-width: 48px; padding: 0 10px; height: 26px; }
 
 @media (pointer: coarse) {
-  .char-slot .opt-btn, .char-slot .opt-toggle { min-width: 32px; min-height: 36px; font-size: 0.85rem; }
-  .char-slot canvas { width: 42px; height: 64px; }
+  .opt-btn { width: 30px; height: 34px; }
+  .opt-swatch { width: 30px; height: 34px; }
+  .opt-value { height: 34px; min-width: 52px; }
+  .opt-toggle { height: 36px; }
+  .gl-toggle { height: 34px; }
+  .char-preview { width: 46px; height: 70px; }
+}
+@media (max-width: 600px) {
+  .cs-row-look { gap: 6px; }
+  .cs-cap { font-size: 0.58rem; }
 }
 
 /* Slider row in settings */
