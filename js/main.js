@@ -365,7 +365,7 @@ function render() {
   if (!App.state) return;
   drawScene(App.ctx, App.state, App.controls);
   renderHud(App.hud, App.state);
-  drawMinimap(App.state);
+  drawMinimap(App.state, App.controls);
 }
 
 function togglePause(force) {
