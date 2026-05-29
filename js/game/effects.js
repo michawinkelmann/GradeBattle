@@ -685,6 +685,22 @@ export function drawWorld(ctx, state) {
   // Projectiles
   for (const p of world.projectiles) {
     if (p.delay && p.delay > 0) continue;
+    // Motion trail: fading dots behind the projectile along its travel
+    // direction. Length scales with speed so fast shots streak more.
+    const sp2 = p.vx * p.vx + p.vy * p.vy;
+    if (sp2 > 400) {
+      const speed = Math.sqrt(sp2);
+      const ux = p.vx / speed, uy = p.vy / speed;
+      const trailLen = Math.min(5, 2 + (speed / 220) | 0);
+      for (let i = 1; i <= trailLen; i++) {
+        const tx = p.x - ux * i * 3.2;
+        const ty = p.y - uy * i * 3.2;
+        const a = (1 - i / (trailLen + 1)) * 0.6;
+        ctx.fillStyle = `rgba(255,255,255,${a})`;
+        const r = 2.6 - i * 0.32;
+        ctx.fillRect(Math.round(tx - r), Math.round(ty - r), Math.ceil(r * 2), Math.ceil(r * 2));
+      }
+    }
     const sp = getProjectileSprite(p.sprite || 'book');
     ctx.drawImage(sp, Math.round(p.x - sp.width / 2), Math.round(p.y - sp.height / 2));
   }

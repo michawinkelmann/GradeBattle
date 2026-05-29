@@ -172,3 +172,36 @@ export function previewTrajectory(x, y, vx, vy, wind, windFactor, steps = 60, st
   }
   return pts;
 }
+
+// Terrain-aware preview: walks the same physics as a real lobbed/direct shot
+// (incl. side-wall bounces) and stops at the first solid pixel so the UI can
+// draw an impact marker where the throw will actually land. Returns
+// { pts: [{x,y}], impact: {x,y} | null }.
+export function predictTrajectory(x, y, vx, vy, wind, windFactor, terrain, gravityScale = 1, maxSteps = 220, stepSize = 1 / 60) {
+  const pts = [];
+  let px = x, py = y;
+  let pvx = vx, pvy = vy;
+  const g = GRAVITY * gravityScale;
+  const windAcc = windFactor * wind * WIND_FACTOR;
+  let impact = null;
+  let lastPushX = px, lastPushY = py;
+  for (let i = 0; i < maxSteps; i++) {
+    pvx += windAcc * stepSize;
+    pvy += g * stepSize;
+    if (pvy > MAX_FALL) pvy = MAX_FALL;
+    px += pvx * stepSize;
+    py += pvy * stepSize;
+    // Side / top wall bounce mirrors stepProjectile so the preview is honest.
+    if (px < 2) { px = 2; pvx = Math.abs(pvx) * 0.55; }
+    if (px > WORLD_W - 2) { px = WORLD_W - 2; pvx = -Math.abs(pvx) * 0.55; }
+    if (py < -40) { py = -40; pvy = Math.abs(pvy) * 0.4; }
+    if (py > WORLD_H + 40) break;
+    if (terrain && isSolid(terrain, px, py)) { impact = { x: px, y: py }; break; }
+    // Sample a point roughly every ~6px of travel for an even dotted line.
+    if ((px - lastPushX) * (px - lastPushX) + (py - lastPushY) * (py - lastPushY) >= 36) {
+      pts.push({ x: px, y: py });
+      lastPushX = px; lastPushY = py;
+    }
+  }
+  return { pts, impact };
+}
