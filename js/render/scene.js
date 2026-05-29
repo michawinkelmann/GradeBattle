@@ -4,7 +4,7 @@ import { drawWorld } from '../game/effects.js';
 import { activePlayer } from '../game/state.js';
 import { getActiveWeapon } from '../ui/controls.js';
 import { getBackdrop, getFarBackdrop } from './sprites.js';
-import { previewTrajectory } from '../engine/physics.js';
+import { previewTrajectory, predictTrajectory } from '../engine/physics.js';
 import { isAimable, isPlaceable } from '../game/weapons.js';
 import { isReducedMotion } from '../ui/prefs.js';
 import { SHIRT_HEX } from '../game/characters.js';
@@ -230,40 +230,120 @@ export function drawScene(ctx, state, input) {
     const me = activePlayer(state);
     const wp = getActiveWeapon(me);
     if (me && wp && isAimable(wp)) {
-      const speed = input.aim.power * 750;
-      const vx = Math.cos(input.aim.angle) * speed;
-      const vy = Math.sin(input.aim.angle) * speed;
-      const startX = me.x + Math.cos(input.aim.angle) * 12;
-      const startY = me.y - me.h * 0.7 + Math.sin(input.aim.angle) * 12;
-      const pts = previewTrajectory(
-        startX, startY, vx, vy, state.wind, wp.windFactor || 0,
-        60, 0.05, wp.gravityScale != null ? wp.gravityScale : 1
-      );
-      // Dotted trajectory (slightly bigger so it's readable on phones).
-      ctx.fillStyle = 'rgba(255,213,74,0.85)';
-      for (let i = 0; i < pts.length; i += 2) {
-        ctx.fillRect(Math.round(pts[i].x) - 1, Math.round(pts[i].y) - 1, 2, 2);
-      }
-      // Slingshot line from char to drag point (mirrors finger position).
-      const dragX = me.x - Math.cos(input.aim.angle) * input.aim.power * 30;
-      const dragY = (me.y - me.h * 0.6) - Math.sin(input.aim.angle) * input.aim.power * 30;
-      ctx.strokeStyle = 'rgba(255,213,74,0.6)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(me.x, me.y - me.h * 0.6);
-      ctx.lineTo(dragX, dragY);
-      ctx.stroke();
-      // Power ring around char: green at low power, red at full.
-      const pw = input.aim.power;
-      const ringR = 6 + pw * 14;
-      const hue = Math.round((1 - pw) * 120);
-      ctx.strokeStyle = `hsla(${hue},85%,55%,0.9)`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(me.x, me.y - me.h * 0.6, ringR, 0, Math.PI * 2);
-      ctx.stroke();
+      drawAimPreview(ctx, state, me, wp, input.aim, reduced);
     }
   }
 
   resetTransform(ctx);
 }
+
+// Rich, high-contrast aiming visualization: power-coloured launch arrow,
+// a bold dotted arc that fades toward the end, and a pulsing impact reticle
+// where the shot is predicted to land.
+function drawAimPreview(ctx, state, me, wp, aim, reduced) {
+  const pw = aim.power;
+  const speed = pw * 750;
+  const dirX = Math.cos(aim.angle);
+  const dirY = Math.sin(aim.angle);
+  const vx = dirX * speed;
+  const vy = dirY * speed;
+  const muzzleX = me.x;
+  const muzzleY = me.y - me.h * 0.6;
+  const startX = me.x + dirX * 12;
+  const startY = me.y - me.h * 0.7 + dirY * 12;
+
+  // Power → colour: green (weak) through yellow to red (full power).
+  const hue = Math.round((1 - pw) * 120);
+  const powerColor = `hsl(${hue},90%,55%)`;
+  const t = performance.now() / 1000;
+  const pulse = reduced ? 0.8 : 0.6 + 0.4 * Math.sin(t * 6);
+
+  const { pts, impact } = predictTrajectory(
+    startX, startY, vx, vy, state.wind, wp.windFactor || 0,
+    state.terrain, wp.gravityScale != null ? wp.gravityScale : 1
+  );
+
+  // 1) Dotted arc. Each dot = dark halo + bright core, shrinking & fading
+  //    toward the end so the eye reads direction and "reach".
+  const n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const f = i / Math.max(1, n - 1);       // 0 at muzzle → 1 at end
+    const fade = 1 - f * 0.55;               // keep the tail visible but lighter
+    const r = 2.6 - f * 1.1;                 // taper 2.6px → 1.5px
+    const px = pts[i].x, py = pts[i].y;
+    // Dark halo for contrast on bright sky / pale terrain.
+    ctx.fillStyle = `rgba(10,12,30,${0.55 * fade})`;
+    ctx.beginPath();
+    ctx.arc(px, py, r + 1, 0, Math.PI * 2);
+    ctx.fill();
+    // Bright power-coloured core.
+    ctx.fillStyle = hslA(hue, 90, 60, fade);
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 2) Launch arrow from the character: thick power-coloured shaft + head,
+  //    length scales with power so you feel the charge.
+  const arrowLen = 14 + pw * 26;
+  const ax = muzzleX + dirX * arrowLen;
+  const ay = muzzleY + dirY * arrowLen;
+  ctx.save();
+  ctx.lineCap = 'round';
+  // Dark outline first.
+  ctx.strokeStyle = 'rgba(10,12,30,0.7)';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(muzzleX, muzzleY); ctx.lineTo(ax, ay); ctx.stroke();
+  // Bright shaft.
+  ctx.strokeStyle = powerColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(muzzleX, muzzleY); ctx.lineTo(ax, ay); ctx.stroke();
+  // Arrowhead.
+  const ah = 5, perpX = -dirY, perpY = dirX;
+  ctx.fillStyle = powerColor;
+  ctx.strokeStyle = 'rgba(10,12,30,0.7)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ax + dirX * ah, ay + dirY * ah);
+  ctx.lineTo(ax + perpX * ah * 0.7, ay + perpY * ah * 0.7);
+  ctx.lineTo(ax - perpX * ah * 0.7, ay - perpY * ah * 0.7);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // 3) Power gauge: an arc around the character that fills with the charge.
+  const gaugeR = 13;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(10,12,30,0.55)';
+  ctx.beginPath(); ctx.arc(muzzleX, muzzleY, gaugeR, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = powerColor;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(muzzleX, muzzleY, gaugeR, -Math.PI / 2, -Math.PI / 2 + pw * Math.PI * 2);
+  ctx.stroke();
+
+  // 4) Impact reticle: pulsing target where the shot is predicted to hit.
+  if (impact) {
+    const rr = (5 + pulse * 3);
+    ctx.save();
+    ctx.translate(impact.x, impact.y);
+    // Outer ring.
+    ctx.strokeStyle = `rgba(10,12,30,0.6)`;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, rr + 1, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = hslA(hue, 90, 60, 0.95);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke();
+    // Crosshair ticks.
+    ctx.beginPath();
+    ctx.moveTo(-rr - 3, 0); ctx.lineTo(-rr + 2, 0);
+    ctx.moveTo(rr - 2, 0); ctx.lineTo(rr + 3, 0);
+    ctx.moveTo(0, -rr - 3); ctx.lineTo(0, -rr + 2);
+    ctx.moveTo(0, rr - 2); ctx.lineTo(0, rr + 3);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function hslA(h, s, l, a) { return `hsla(${h},${s}%,${l}%,${a})`; }
